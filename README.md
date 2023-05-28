@@ -1,4 +1,3 @@
-
 ![license](https://img.shields.io/github/license/ric2k1/qsyn?style=plastic)
 ![stars](https://img.shields.io/github/stars/ric2k1/qsyn?style=plastic)
 ![contributors](https://img.shields.io/github/contributors/ric2k1/qsyn?style=plastic)
@@ -6,7 +5,10 @@
 ![g++-10](https://img.shields.io/badge/g++-≥10-blue?style=plastic)
 ![gfortran-10](https://img.shields.io/badge/gfortran-≥10-blueviolet?style=plastic)
 
-# Qsyn: An End-to-End Quantum Circuit Synthesis Framework
+# Getting Started with Qsyn.Lab
+###### tags: `qsyn`
+
+## Qsyn: An End-to-End Quantum Circuit Synthesis Framework
 ![](https://i.imgur.com/wKg5cQO.jpg)
 
 
@@ -15,207 +17,152 @@
 <!-- ![example branch parameter](https://github.com/ric2k1/qsyn/actions/workflows/build-and-test.yml/badge.svg)
  -->
 
-## Introduction
-Qsyn is a C++ based growing software system for synthesis, optimization and verification of quantum circuits appearing in quantum computers. Qsyn implements scalable quantum circuits optimization by combining ZX-Calculus and technology mapping.
+## How to log in to DVLab work stations?
 
-Qsyn provides an experimental implementation of optimization algorithms and a programming environment for simulation or building similar applications. Future development will focus on enhancing the algorithms, and visualization of ZX-graphs.
+For the NTUEE class project students, you should have received an email containing your username and default password. Please take a look and 
+```shell!
+ssh <Username>@cthulhu.ee.ntu.edu.tw
+```
+to the work station.
 
-## Third party dependencies
-* `xtensor`, `xtensor-blas` for tensor calculation
-* `tqdm` for progress bar pretty-printing
-* `pdflatex` for outputting pdf files
+For those who are interested in trying out Qsyn.Lab, you are welcome to play around this open repo. Should you have any question or suggestion, please feel free to raise a GitHub issue or contact us at: dvlabdvlab@gmail.com.
 
-## Getting Started
+
+## How to start running Qsyn?
 ### Installation
 ```shell!
-git clone https://github.com/ric2k1/qsyn.git
-cd qsyn
+git clone https://github.com/ric2k1/qsyn.lab.git
+cd qsyn.lab
 ```
-#### Visualization (optional for ZXGDraw)
-```shell
-sudo apt-get install texlive-latex-base
-```
-### System Requirements
-* Linux (recommended): `Qsyn` requires `g++-10` and `gfortran-10` to compile. The two compilers should also be on the same version.
-* MacOS: `Qsyn` can also be compiled with Apple Clang (which, by default, is what gets called when invoking `g++`) with version 13.1.7 and up. However, note the following caveats:
-    * You may need to install `OpenMP` via HomeBrew or MacPort, and link/add the headers and libraries into compiler search path.
-    * Due to differences in c++ standard implementation, there might be some deviations in the output of Apple Clang-compiled program from their g++-compiled counterparts.
+
 ### Compilation
-1. Qsyn depends on `xtensor` and `xtensor-blas`. To install these dependencies, run `configure.sh`, which checks for lacking dependencies and install them automatically. 
-	```shell!
-	sudo ./configure.sh
-	```
-2. Then, run `make` to build up the executable.
-	```shell!
-	make -j16
-	```
-    or
-    ```shell!
-	gmake -j16
-	```
-    if you are on MacOS.
-3. If the compilation process ends successfully, you will see
-    ```shell!
-    > building qsyn...
-    ~/qsyn$ _
-    ```
-4. To delete all intermediate files created in the compilation process, please type
-    ```shell!
-	make clean
-	```
+```shell!
+make -j16
+```
+
+:::info
+Note: We support Linux OS only right now. We may support macOS soon.
+:::
 
 ### Run
+```shell!
+./qsyn
+```
 
-* After successful compilation, you can call the command-line interface of `Qsyn` where you can execute commands implemented into `Qsyn`.
-    
-   ```shell!
-    ❯ ./qsyn
-    DV Lab, NTUEE, Qsyn 0.4.0
-    qsyn> 
-   ```
+> Read ./README-qsyn.md for more information about Qsyn if you have any question.
 
+## Brief Introduction to Commands
 
-* To run the demo program, you can provide a file containing commands. For example:
-    ```shell!
-    ❯ ./qsyn -f tests/demo/demo/dof/tof_3.dof
-    DV Lab, NTUEE, Qsyn 0.4.0
-    qsyn> verb 0
-    Note: verbose level is set to 0
+* Information
+    * help: see all commands and briefly introduction
+    * history: print command history
+    * usage: report the runtime and/or memory usage
+    * qquit: quit the exection
+* Settings
+    * color: toggle colored printing in command line (default: true)
+    * verbose: set verbosity levle to 0-9 (default: 3)
+    * seed: set the random seed
+* Device Topology
+    * Commands start with **DT**
+* DuosTra
+    * Commands start with **DUO**
+* EXTraction
+    * Commands start with **EXT**
+* Quantum Circuit
+    * Commands start with **QC**
+* ZX-graph
+    * Commands start with **ZX**
+* TenSor
+    * Commands start with **TS**
 
-    qsyn> zxgread benchmark/zx/tof3.zx
+:::info
+You can type the first several characters of the command and press **`Tab`** to see more information for the corresponding command.
+:::
 
-    qsyn> zxgs -freduce
+## A Basic Example
 
-    qsyn> zxgp
-    Graph 0( 3 inputs, 3 outputs, 17 vertices, 19 edges )
+> See ```./examples/basic_cmd.dof``` for full commands
 
-    qsyn> qq -f
-    ```
+1. Read a QASM file of QFT_3 circuit and print some information
+```
+qccread ./benchmark/qft/qft_3.qasm 
+qccprint -s
+qccprint -q
+```
 
-* The same result can be produced by running in the command-line mode:
-    ```shell!
-    ❯ ./qsyn
-    DV Lab, NTUEE, Qsyn 0.4.0
-    qsyn> dofile tests/demo/demo/dof/tof_3.dof
-
-    qsyn> verb 0
-    Note: verbose level is set to 0
-
-    qsyn> zxgread benchmark/zx/tof3.zx
-
-    qsyn> zxgs -freduce
-
-    qsyn> zxgp
-    Graph 0( 3 inputs, 3 outputs, 17 vertices, 19 edges )
-
-    qsyn> qq -f
-    ```
-
-
-
-### Testing
-We have provided some DOFILEs, i.e., a sequence of commands, to serve as functionality checks as well as demonstration of use. DOFILEs are Located under `tests/<section>/<subsection>/dof/`.
-
-* To run a DOFILE and compare the result to the reference, type
-    ```shell!
-    ./DOFILE.sh <path/to/test> -d
-    ```
-* To update the reference to a dofile, type
-    ```shell!
-    ./DOFILE.sh <path/to/test> -up
-    ```
-* You may also run all DOFILEs by running
-    ```bash!
-    ./RUN_ALL_TEST.sh
-    ```
-Notice that if you use Apple Clang to compile `Qsyn`, some of the DOFILEs may produce different results, which is to be expected.
-
-## License
-[Apache License 2.0](https://github.com/ric2k1/qsyn/blob/main/LICENSE)
-## Commands List
-
-### Info
-| Command      | Description                         			| Options     |
-| --------     | --------                            			| --------    |
-| COLOR        | toggle colored printing (1: on, 0: off)  		|             |
-| DOfile       | execute the commands in the dofile  			|             |
-| HELp         | print this help message             			|             |
-| HIStory      | print command history               			|             |
-| QQuit        | quit Qsyn                  			        |             |
-| SEED         | fix the seed                        			|             |
-| USAGE        | report the runtime and/or memory usage         |             |
-| VERbose      | set verbose level to 0-9 (default: 3)          |             |
+![](https://hackmd.io/_uploads/BJccpspB3.png)
 
 
+2. Transform the quantum circuit to ZX-graph
+```
+qc2zx
+```
 
-### QCir
+3. Optimize ZX-graph using `full_reduce` and print infos for ZX-graph before and after the optimization
 
-| Command      | Description                         					| Options        |
-| --------     | --------                            					| --------       |
-| QC2TS         | convert QCir to tensor                                 |                |
-| QC2ZX         | convert QCir to ZX-graph                               |                |
-| QCBAdd        | add qubit(s)                                           |                |
-| QCBDelete     | delete an empty qubit                                  |                |
-| QCCHeckout    | checkout to QCir <id> in QCirMgr                       |                |
-| QCCOMpose     | compose a QCir                                         |                |
-| QCCOPy        | copy a QCir                                            |                |
-| QCCPrint      | print info of QCir                                     |                |
-| QCCRead       | read a circuit and construct the corresponding netlist |                |
-| QCCWrite      | write QCir to a QASM file                              |                |
-| QCDelete      | remove a QCir from QCirMgr                             |                |
-| QCGAdd        | add quantum gate                                       |                |
-| QCGDelete     | delete quantum gate                                    |                |
-| QCGPrint      | print gate info in QCir                                |                |
-| QCNew         | create a new QCir to QCirMgr                           |                |
-| QCPrint       | print info of QCirMgr                                  |                |
-| QCReset       | reset QCirMgr                                          |                |
-| QCTensor      | tensor a QCir                                          |                |
+```
+zxgprint -s
+zxcopy
+zxgdraw ./examples/pdf/qft_3-before.pdf
+zxgwrite ./examples/zx-format/qft_3-before.zx
+zxgsimp -freduce
+zxgprint -s
+zxgdraw ./examples/pdf/qft_3-after.pdf
+zxgwrite ./examples/zx-format/qft_3-after.zx
+```
+
+![](https://hackmd.io/_uploads/ByMqRjarh.png)
 
 
+4. Transform the optimized ZX-graph back to quantum circuit and write it to a new QASM file
 
-### Graph
+```
+zxcopy
+zx2qc
+qccprint -s
+qccprint -q
+qccwrite ./examples/qasm/qft_3-after.qasm
+```
 
-| Command       | Description                         								| Options     |
-| --------      | --------                            								| --------    |
-| ZX2QC         | extract QCir from ZX-graph                                        |             |
-| ZX2TS         | convert ZX-graph to tensor                                        |             |
-| ZXCHeckout    | checkout to Graph <id> in ZXGraphMgr                				|             |
-| ZXCOMpose     | compose a ZX-graph				                                |             |
-| ZXCOPy        | copy a ZX-graph				                                    |             |
-| ZXDelete      | remove a ZX-graph from ZXGraphMgr                                 |             |
-| ZXGADJoint    | adjoint ZX-graph                                                  |             |
-| ZXGASsign     | assign quantum states to input/output vertex					    |             |
-| ZXGDraw       | draw ZX-graph                                                     |             |
-| ZXGEdit       | edit ZX-graph    			                                        |             |
-| ZXGGFlow      | calculate the generalized flow of current ZX-graph                |             |
-| ZXGPrint      | print info of ZX-graph    			                            |             |
-| ZXGRead       | read a file and construct the corresponding ZX-graph    			|             |
-| ZXGSimp       | perform simplification strategies for ZX-graph        			|             |
-| ZXGTest       | test ZX-graph structures and functions	    			        |             |
-| ZXGTRaverse   | traverse ZX-graph and update topological order of vertices	    |             |
-| ZXGWrite      | write a ZX-graph to a file    			                        |             |
-| ZXNew         | create a new ZX-graph to ZXGraphMgr        			            |             |
-| ZXPrint       | print info of ZXGraphMgr	    			                        |             |
-| ZXReset       | reset ZXGraphMgr                                                  |             |
-| ZXTensor      | tensor a ZX-graph				                                    |             |
+5. Transform the original QASM ans the optimized one we just generated to tensor to check if they are equivalent
+
+```
+qccheckout 0 // The original one
+qc2ts
+qccheckout 1 // The optimized one
+qc2ts
+tsequiv 0 1
+```
+
+![](https://hackmd.io/_uploads/BJ8nRi6H3.png)
 
 
+6. Adjoint the original ZX-graph and compose it with the optimized one and `full_reduce` the new ZX-graph again to check if it is identity ($AA^{T} = I$)
 
-### Tensor
-| Command      | Description                                         | Options     |
-| --------     | --------                                            | --------    |
-| TSADJoint    | adjoint the specified tensor                        |             |
-| TSEQuiv      | check the equivalency of two stored tensors         |             |
-| TSPrint      | print info of stored tensors                        |             |
-| TSReset      | reset the tensor manager                            |             |
+```
+zxcheckout 1
+zxgadjoint
+zxcompose 0
+zxgsimp -freduce
+zxgp -s
+zxgp -v
+```
+![](https://hackmd.io/_uploads/rkx-1nprh.png)
 
-### Extraction
-| Command      | Description                                         | Options     |
-| --------     | --------                                            | --------    |    
-| EXTPrint     | print info of extracting ZX-graph                   |             |
-| EXTRact      | perform step(s) in extraction                       |             |
+7. Quit the exection
+```
+qq -f
+```
 
-### Lattice
-| Command      | Description                                                                     | Options     |
-| --------     | --------                                                                        | --------    |
-| LTS          | (experimental) perform mapping from ZX-graph to corresponding lattice surgery   |             |
+
+## Try yourself
+1. Change verbosity from 0-9 and see the printing information in command line
+2. Test some other dofiles and try to understand their commands.
+```
+./examples/symbolic_simulation{1, 2}.dof
+./examples/optimize.dof
+```
+3. Use `qcprint`, `zxprint`, and `tsprint` to see the information of `QCirMgr`, `ZXGraphMgr` and `TSMgr`
+4. Use different simplification rules in `zxgsimp` cmd and see the difference before and after those rules.
+![](https://hackmd.io/_uploads/ryp2lnTS3.png)
+
