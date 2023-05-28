@@ -1,0 +1,14 @@
+*.o
+.vscode
+bin/*
+include/*
+!vendor/include
+!include/mk
+tests/bin/*
+lib/*
+vendor/engine/* 
+!lib/
+!lib/lib.d
+!lib/libcmd-*
+qsyn*
+
