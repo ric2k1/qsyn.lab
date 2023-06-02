@@ -17,6 +17,23 @@ using namespace std;
 extern size_t verbose;
 
 /**
+ * @brief
+ *
+ * @param start
+ * @param end
+ */
+void QCir::analyze(size_t start, size_t end) {
+    updateGateTime();
+    // TODO: Start writing your code!
+
+    // Hint: Useful cmd: QCSET, setting the delay of gates.
+    //       Useful functions:
+    //          gate->getDelay(): getting the delay of the QCirGate.
+    //          gate->getTime(): getting the "ending" time of the QCirGate, i.e. starting time = gate->getTime()-gate->getDelay().
+    //       You can get first gate of the qubit by class QCirQubit. Please refer to class QCirQubit and QCirGate for more information.
+}
+
+/**
  * @brief Copy a circuit
  *
  * @return QCir*
