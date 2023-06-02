@@ -13,7 +13,9 @@
 #include <iostream>
 #include <string>
 
+#include "apCmd.h"
 #include "cmdMacros.h"   // for CMD_N_OPTS_EQUAL_OR_RETURN, CMD_N_OPTS_AT_LE...
+#include "phase.h"      // for Phase
 #include "textFormat.h"  // for TextFormat
 #include "zxGraph.h"     // for ZXGraph, ZXVertex
 #include "zxGraphMgr.h"  // for ZXGraphMgr
@@ -21,9 +23,11 @@
 namespace TF = TextFormat;
 
 using namespace std;
-
 extern ZXGraphMgr *zxGraphMgr;
 extern size_t verbose;
+using namespace ArgParse;
+
+unique_ptr<ArgParseCmdType> ZXGNormalizeCmd();
 
 bool initZXCmd() {
     zxGraphMgr = new ZXGraphMgr;
@@ -42,6 +46,7 @@ bool initZXCmd() {
           cmdMgr->regCmd("ZXGASsign", 5, make_unique<ZXGAssignCmd>()) &&
           cmdMgr->regCmd("ZXGTRaverse", 5, make_unique<ZXGTraverseCmd>()) &&
           cmdMgr->regCmd("ZXGDraw", 4, make_unique<ZXGDrawCmd>()) &&
+          cmdMgr->regCmd("ZXGNormalize", 4, ZXGNormalizeCmd()) &&
           cmdMgr->regCmd("ZX2TS", 5, make_unique<ZX2TSCmd>()) &&
           cmdMgr->regCmd("ZXGRead", 4, make_unique<ZXGReadCmd>()) &&
           cmdMgr->regCmd("ZXGWrite", 4, make_unique<ZXGWriteCmd>()))) {
@@ -50,6 +55,21 @@ bool initZXCmd() {
     }
     return true;
 }
+
+
+ArgType<size_t>::ConstraintType validZXGraphId = {
+    [](ArgType<size_t> &arg) {
+        return [&arg]() {
+            return zxGraphMgr->isID(arg.getValue());
+        };
+    },
+    [](ArgType<size_t> const &arg) {
+        return [&arg]() {
+            cerr << "Error: ZXGraph " << arg.getValue() << " does not exist!!\n";
+        };
+    }};
+
+
 
 //----------------------------------------------------------------------
 //    ZXNew [(size_t id)]
@@ -890,4 +910,24 @@ void ZXGAdjointCmd::usage() const {
 void ZXGAdjointCmd::summary() const {
     cout << setw(15) << left << "ZXGADJoint: "
          << "adjoint ZX-graph\n";
+}
+
+
+//----------------------------------------------------------------------
+//    ZXGNormalize
+//----------------------------------------------------------------------
+unique_ptr<ArgParseCmdType> ZXGNormalizeCmd() {
+    auto cmd = make_unique<ArgParseCmdType>("ZXGNormalize");
+
+    cmd->parserDefinition = [](ArgumentParser &parser) {
+        parser.help("normalize a ZX-graph");
+    };
+
+    cmd->onParseSuccess = [](ArgumentParser const &parser) {
+        ZX_CMD_GRAPHMGR_NOT_EMPTY_OR_RETURN("ZXGNormalize");
+        zxGraphMgr->getGraph()->normalize();
+        return CMD_EXEC_DONE;
+    };
+
+    return cmd;
 }

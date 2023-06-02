@@ -288,3 +288,26 @@ void ZXGraph::disownVertices() {
     _inputList.clear();
     _outputList.clear();
 }
+
+/**
+ * @brief Rearrange `col` index for each spider to enhance the readability of the ZX-graph
+ * 
+ */
+void ZXGraph::normalize() {
+    // TODO: Start writing your code!
+    // Hint: to trace through all vertices in a ZX-graph, you can try this:
+    //          for(auto& v : getVertices()){}
+    //
+    //       to trace through all edges in a ZX-graph, you can try this:
+    //          forEachEdge([](const EdgePair& epair) {
+    //              cout << "( " << epair.first.first->getId() << ", " << epair.first.second->getId() << " )\tType:\t" << EdgeType2Str(epair.second) << endl;
+    //          });
+    //       to get/set the `col` of a ZXVertex, you can use `getCol()`, `setCol()`
+    //
+    // A Brute-Force Method:
+    //  (1) Trace through all vertices and use a hashmap(key: (int) qubit, value: (vector<ZXVertex*>) vec) to classify vertices
+    //  (2) For each qubit, reassign the `col` index for each ZXVertex* in vec from 0 to vec.size()-1
+    //
+    // 👆 This is not a good method, but a very simple method. Try to implement it, optimize it or find out your own solution! 💪💪💪 Good Luck!
+
+}
