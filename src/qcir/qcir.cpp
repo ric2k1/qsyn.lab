@@ -100,7 +100,7 @@ void QCir::printCircuit() {
  */
 void QCir::printSummary() {
     printCircuit();
-    analysis();
+    countGate();
     printDepth();
 }
 
@@ -380,12 +380,12 @@ bool QCir::removeGate(size_t id) {
 }
 
 /**
- * @brief Analysis the quantum circuit and estimate the Clifford and T count
+ * @brief Estimate the Clifford and T count
  *
  * @param detail if true, print the detail information
  */
 // TODO - Analysis qasm is correct since no MC in it. Would fix MC in future.
-void QCir::analysis(bool detail) {
+void QCir::countGate(bool detail) {
     size_t clifford = 0;
     size_t tfamily = 0;
     size_t cxcnt = 0;
