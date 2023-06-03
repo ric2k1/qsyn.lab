@@ -12,6 +12,8 @@
 #include <string>
 
 #include "apCmd.h"
+#include "cmdMacros.h"  // for CMD_N_OPTS_AT_MOST_OR_RETURN
+#include "phase.h"      // for Phase
 #include "simplify.h"
 #include "zxCmd.h"
 #include "zxGraphMgr.h"
@@ -19,6 +21,7 @@
 using namespace std;
 using namespace ArgParse;
 extern size_t verbose;
+
 unique_ptr<ArgParseCmdType> ZXGSimpCmd();
 
 bool initSimpCmd() {
@@ -30,15 +33,32 @@ bool initSimpCmd() {
     return true;
 }
 
+ArgType<int>::ConstraintType validPreduceParam = {
+    [](ArgType<int> &arg) {
+        return [&arg]() {
+            return (arg.getValue() <= 10 && arg.getValue() >= 2);
+        };
+    },
+    [](ArgType<int> const &arg) {
+        return [&arg]() {
+            cerr << "The parameter in partition reduce should be in the range of [2, 10]" << endl;
+        };
+    }};
+
 //------------------------------------------------------------------------------------------------------------------
 //    ZXGSimp [-TOGraph | -TORGraph | -HRule | -SPIderfusion | -BIAlgebra | -IDRemoval | -STCOpy | -HFusion |
-//             -HOPF | -PIVOT | -LComp | -INTERClifford | -PIVOTGadget | -PIVOTBoundary | -CLIFford | -FReduce | -SReduce]
+//             -HOPF | -PIVOT | -LComp | -INTERClifford | -PIVOTGadget | -PIVOTBoundary | -CLIFford | -FReduce | -SReduce | -PReduce]
 //------------------------------------------------------------------------------------------------------------------
 unique_ptr<ArgParseCmdType> ZXGSimpCmd() {
     auto cmd = make_unique<ArgParseCmdType>("ZXGSimp");
 
     cmd->parserDefinition = [](ArgumentParser &parser) {
         parser.help("perform simplification strategies for ZX-graph");
+        parser.addArgument<int>("d")
+            .constraint(validPreduceParam)
+             .required(false)
+            .help("parameter for preduce");
+            
 
         auto mutex = parser.addMutuallyExclusiveGroup();
         mutex.addArgument<bool>("-freduce")
@@ -47,6 +67,10 @@ unique_ptr<ArgParseCmdType> ZXGSimpCmd() {
         mutex.addArgument<bool>("-sreduce")
             .action(storeTrue)
             .help("perform symbolic reduce");
+        mutex.addArgument<bool>("-preduce")
+            .action(storeTrue)
+            .help("perform partitioning reduce");
+
 
         mutex.addArgument<bool>("-interclifford")
             .action(storeTrue)
@@ -102,6 +126,11 @@ unique_ptr<ArgParseCmdType> ZXGSimpCmd() {
         Simplifier s(zxGraphMgr->getGraph());
         if (parser["-sreduce"].isParsed())
             s.symbolicReduce();
+        else if (parser["-preduce"].isParsed()){
+            if(!parser["d"].isParsed()) 
+                cerr << "Error: Partition reduce in ZXGSimp should provide a integer `d` after the argument!" << endl;
+            else s.partitionReduce(parser["d"]);
+        }
         else if (parser["-interclifford"].isParsed())
             s.interiorCliffordSimp();
         else if (parser["-clifford"].isParsed())

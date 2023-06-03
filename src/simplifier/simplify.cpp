@@ -349,6 +349,19 @@ void Simplifier::symbolicReduce() {
 }
 
 /**
+ * @brief Partition ZX-graph first to `d` sub ZX-graph. 
+ *        Do the `fullReduce` for each sub ZX-graph and then recombine them in the correct order.
+ *        (Optional) After combination, call `fullReduce` again.
+ * 
+ * @param d 
+ */
+void Simplifier::partitionReduce(int d) {
+    // TODO:
+    
+}
+
+
+/**
  * @brief Print recipe of Simplifier
  *
  */
