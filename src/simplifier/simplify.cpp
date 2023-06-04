@@ -356,7 +356,21 @@ void Simplifier::symbolicReduce() {
  * @param d 
  */
 void Simplifier::partitionReduce(int d) {
-    // TODO:
+    // TODO: Start writing your code!
+    // Hint: to trace through all vertices in a ZX-graph, you can try this:
+    //       for(auto& v : _simpGraph->getVertices()){}
+    //
+    //       to get/set the `col` of a ZXVertex, you can use `v->getCol()`
+    // 
+    // A simple method:
+    //  (1) Trace through all vertices and use a new vector(vector<ZXGraph* > vec) to store the i-th sub-graph vertices
+    //  (2) As a reminder, after each cut of the ZX-graph, you should remember to add outputs to the cut sub-graph, and add inputs to the remain one. (This step is a little tricky!)
+    //  (3) For each sub ZX-graph, call `fullReduce` to optimize them respectively
+    //  (4) Use `compose` defined in `src/graph/zxGraphAction.cpp` to combine each sub ZX-graph in the correct order.
+    //  (5) (Optional) After combination, call `fullReduce` again to make the ZX-graph optimal.
+    //
+    // 👆 This is one of the methods. Try to implement it, optimize it or find out your own solution! 💪💪💪 Good Luck!
+    
     
 }
 
