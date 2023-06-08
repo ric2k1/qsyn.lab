@@ -1,14 +1,7 @@
-# Getting Started with Qsyn
+# Getting Start with Qsyn
 ###### tags: `qsyn`
-## How to log in to DVLab work stations?
 
-You should have received an email containing your username and default password. Please take a look and 
-```shell!
-ssh <Username>@cthulhu.ee.ntu.edu.tw
-```
-to the work station.
-
-## How to start running Qsyn?
+## How to start running Qsyn ?
 ### Installation
 ```shell!
 git clone https://github.com/ric2k1/qsyn.lab.git
@@ -27,7 +20,7 @@ make -j16
 
 > Read ./README.md for more information if you have any question.
 
-## Brief Introduction to Commands
+## Command Briefly Introduction
 
 * Information
     * help: see all commands and briefly introduction
@@ -134,8 +127,3 @@ qq -f
 2. Use `qcprint`, `zxprint`, and `tsprint` to see the information of `QCirMgr`, `ZXGraphMgr` and `TSMgr`
 3. Use different simplification rules in `zxgsimp` cmd and see the difference before and after those rules.
 ![](https://hackmd.io/_uploads/ryp2lnTS3.png)
-
-
-
-
-
