@@ -287,6 +287,23 @@ void CmdParser::moveToHistory(int index) {
 bool CmdParser::addHistory() {
     string cmd = stripWhitespaces(stripComments(_readBuf));
 
+    size_t argumentTagPos = _readBuf.find("//!ARGS");
+    if (argumentTagPos == 0) {
+        if (!checkVariablesMatchDescription(_readBuf)) {
+            // TODO - t4-parametrized_dofiles
+            // print the usage of dofile and exit
+            // e.g.,
+            // "//!ARGS 2 ARG1 ARG2"
+            // should give
+            // Usage: ./qsyn -f <dofile.dof> <ARG1> <ARG2>
+
+            // You probably need the member _dofileName and _variables
+
+            // END TODO - t4-parametrized_dofiles
+            exit(1);
+        }
+    }
+
     if (_tempCmdStored) {
         _history.pop_back();
         _tempCmdStored = false;
@@ -302,6 +319,20 @@ bool CmdParser::addHistory() {
     _historyIdx = int(_history.size());
 
     return newCmd;
+}
+
+bool CmdParser::checkVariablesMatchDescription(std::string const& str) const {
+    // TODO - t4-parametrized_dofiles
+    // parse the string
+    // "//!ARGS n <ARG1> <ARG2> ... <ARGn>"
+    // and check if for all k = 1 to n,
+    // _variables[to_string(k)] is mapped to a valid value
+
+    // To enable keyword arguments, also map the names <ARGk>
+    // to _variables[to_string(k)]
+
+    return true;  // if all variables pass the check, else false
+    // END TODO - t4-parametrized_dofiles
 }
 
 // 1. Replace current line with _history[_historyIdx] on the screen

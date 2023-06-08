@@ -30,11 +30,10 @@ void mybeep();
 // return false if file cannot be opened
 // Please refer to the comments in "DofileCmd::exec", cmdCommon.cpp
 bool CmdParser::openDofile(const string& dof) {
-    // TODO...
     if (_dofile != 0)
         if (!pushDofile()) return false;
-    // Keep this line for TODO's
     _dofile = new ifstream(dof.c_str());
+    _dofileName = dof;
     if (!_dofile->is_open()) {
         closeDofile();
         return false;
@@ -45,14 +44,12 @@ bool CmdParser::openDofile(const string& dof) {
 // Must make sure _dofile != 0
 void CmdParser::closeDofile() {
     assert(_dofile != 0);
-    // TODO...
-    // Keep this line for TODO's
     delete _dofile;
     _dofile = 0;
+    _dofileName.clear();
     popDofile();
 }
 
-// Removed for TODO's
 // return false if stack overflow
 bool CmdParser::pushDofile() {
 #ifdef __APPLE__
@@ -154,7 +151,6 @@ CmdParser::execOneCmd() {
 // For each CmdExec* in _cmdMap, call its "help()" to print out the help msg.
 // Print an endl at the end.
 void CmdParser::printHelps() const {
-    // TODO...
     for (const auto& mi : _cmdMap)
         mi.second->summary();
 
@@ -203,6 +199,8 @@ CmdParser::parseCmd() {
     string str;
     stripQuotes(buffer, str);
 
+    str = replaceVariableKeysWithValues(str);
+
     string cmd;
     size_t n = myStrGetTok2(str, cmd);
     CmdExec* e = getCmd(cmd);
@@ -215,7 +213,39 @@ CmdParser::parseCmd() {
     return {e, option};
 }
 
-// Remove this function for TODO...
+string CmdParser::replaceVariableKeysWithValues(string const& str) const {
+    // TODO - t4-parametrized_dofiles
+    // if `str` contains the some dollar sign '$',
+    // try to convert it into variable
+    // unless it is preceded by '\'.
+
+    // Variables are in the form of `$NAME` or `${NAME}`,
+    // where the name should consists of only alphabets, numbers,
+    // and the underscore '_'.
+
+    // If curly braces are used (${NAME}),
+    // the text inside the curly braces is the variable name.
+
+    // If otherwise no curly braces are used ($NAME),
+    // the variable name is until some illegal characters for a name appears.
+
+    // if a variable is existent, replace the $NAME or ${NAME} syntax with their value. Otherwise, replace the syntax with an empty string
+
+    // e.g., suppose foo_bar=apple, foo=banana
+    //       "$foo_bar"     --> "apple"
+    //       "$foo.bar"     --> "banana.bar"
+    //       "${foo}_bar"   --> "banana_bar"
+    //       "foo_$bar"     --> "foo_"
+    //       "${foo}${bar}" --> "banana"
+
+    // optional: if inside ${NAME} is an illegal name string,
+    // warn the user.
+
+    // return a string with all variables substituted with their value.
+    return str;
+    // END TODO - t4-parametrized_dofiles
+}
+
 //
 // This function is called by pressing 'Tab'.
 // It is to list the partially matched commands.
@@ -743,8 +773,6 @@ CmdExec::errorOption(CmdOptionError err, const string& opt) {
     return CMD_EXEC_ERROR;
 }
 
-// Remove this function for TODO...
-//
 // Called by "getCmd()"
 // Check if "check" is a matched substring of "_optCmd"...
 // if not, return false.

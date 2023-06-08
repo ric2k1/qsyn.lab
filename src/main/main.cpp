@@ -44,7 +44,7 @@ extern MyUsage myUsage;
 
 static void
 usage() {
-    cout << "Usage: ./qsyn [ -File < doFile > ]" << endl;
+    cout << "Usage: ./qsyn [-File < doFile > [arguments...]]" << endl;
 }
 
 static void
@@ -57,6 +57,11 @@ int main(int argc, char** argv) {
     myUsage.reset();
 
     signal(SIGINT, [](int signum) -> void { cmdMgr->sigintHandler(signum); return; });
+
+    // TODO - t4-parametrized_dofiles
+    // change the parsing logic here so that qsyn accepts the following format:
+    // ./qsyn [-File <dofile.dof> [arguments...]]
+    // use `cmdMgr->addVariable(key, val)` to add variable to the parser.
 
     if (argc == 3) {  // -file <doFile>
         if (myStrNCmp("-File", argv[1], 2) == 0) {
@@ -74,6 +79,8 @@ int main(int argc, char** argv) {
     }
 
     cout << "DV Lab, NTUEE, Qsyn 0.4.2" << endl;
+
+    // END TODO - t4-parametrized_dofiles
 
     if (
         // !initArgParserCmd() ||
