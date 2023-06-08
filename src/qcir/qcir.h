@@ -78,7 +78,7 @@ public:
 
     void countGate(bool = false);
     void analyze(size_t=0, size_t=ERROR_CODE);
-    void analysis(bool = false);
+
     void ZXMapping();
     void tensorMapping();
 
