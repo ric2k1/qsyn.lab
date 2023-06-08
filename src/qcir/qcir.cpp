@@ -100,7 +100,7 @@ void QCir::printCircuit() {
  */
 void QCir::printSummary() {
     printCircuit();
-    countGate();
+    analysis();
     printDepth();
 }
 
@@ -380,12 +380,12 @@ bool QCir::removeGate(size_t id) {
 }
 
 /**
- * @brief Estimate the Clifford and T count
+ * @brief Analysis the quantum circuit and estimate the Clifford and T count
  *
  * @param detail if true, print the detail information
  */
 // TODO - Analysis qasm is correct since no MC in it. Would fix MC in future.
-void QCir::countGate(bool detail) {
+void QCir::analysis(bool detail) {
     size_t clifford = 0;
     size_t tfamily = 0;
     size_t cxcnt = 0;
@@ -415,20 +415,20 @@ void QCir::countGate(bool detail) {
 
     auto analysisMCR = [&clifford, &tfamily, &nct, &cxcnt](QCirGate *g) -> void {
         if (g->getQubits().size() == 2) {
-            if (g->getPhase().getRational().denominator() == 1) {
+            if (g->getPhase().denominator() == 1) {
                 clifford++;
                 if (g->getType() != GateType::MCPX || g->getType() != GateType::MCRX) clifford += 2;
                 cxcnt++;
-            } else if (g->getPhase().getRational().denominator() == 2) {
+            } else if (g->getPhase().denominator() == 2) {
                 clifford += 2;
                 cxcnt += 2;
                 tfamily += 3;
             } else
                 nct++;
         } else if (g->getQubits().size() == 1) {
-            if (g->getPhase().getRational().denominator() <= 2)
+            if (g->getPhase().denominator() <= 2)
                 clifford++;
-            else if (g->getPhase().getRational().denominator() == 4)
+            else if (g->getPhase().denominator() == 4)
                 tfamily++;
             else
                 nct++;
@@ -445,18 +445,18 @@ void QCir::countGate(bool detail) {
                 break;
             case GateType::P:
                 rz++;
-                if (g->getPhase().getRational().denominator() <= 2)
+                if (g->getPhase().denominator() <= 2)
                     clifford++;
-                else if (g->getPhase().getRational().denominator() == 4)
+                else if (g->getPhase().denominator() == 4)
                     tfamily++;
                 else
                     nct++;
                 break;
             case GateType::RZ:
                 rz++;
-                if (g->getPhase().getRational().denominator() <= 2)
+                if (g->getPhase().denominator() <= 2)
                     clifford++;
-                else if (g->getPhase().getRational().denominator() == 4)
+                else if (g->getPhase().denominator() == 4)
                     tfamily++;
                 else
                     nct++;
@@ -483,9 +483,9 @@ void QCir::countGate(bool detail) {
                 break;
             case GateType::RX:
                 rx++;
-                if (g->getPhase().getRational().denominator() <= 2)
+                if (g->getPhase().denominator() <= 2)
                     clifford++;
-                else if (g->getPhase().getRational().denominator() == 4)
+                else if (g->getPhase().denominator() == 4)
                     tfamily++;
                 else
                     nct++;
@@ -500,9 +500,9 @@ void QCir::countGate(bool detail) {
                 break;
             case GateType::RY:
                 ry++;
-                if (g->getPhase().getRational().denominator() <= 2)
+                if (g->getPhase().denominator() <= 2)
                     clifford++;
-                else if (g->getPhase().getRational().denominator() == 4)
+                else if (g->getPhase().denominator() == 4)
                     tfamily++;
                 else
                     nct++;
