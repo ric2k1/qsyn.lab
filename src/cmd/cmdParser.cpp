@@ -245,17 +245,30 @@ string CmdParser::replaceVariableKeysWithValues(string const& str) const {
     string result = str;
 
     vector<tuple<size_t, size_t, string>> to_replace;
-    for (auto re : {regex("\\$[a-zA-Z0-9_]+"), regex("\\$\\{[a-zA-Z0-9_]+\\}")}) {
+    // \S means non-whitespace character
+    for (auto re : {regex("\\$[a-zA-Z0-9_]+"), regex("\\$\\{\\S+\\}")}) {
         smatch match;
         regex_search(result, match, re);
         for (size_t i = 0; i < match.size(); ++i) {
             string var = match[i];
             // tell if it is a curly brace variable or not
-            string var_key = var[1] == '{' ? var.substr(2, var.length() - 3) : var.substr(1);
+            bool is_brace = var[1] == '{';
+            string var_key = is_brace ? var.substr(2, var.length() - 3) : var.substr(1);
+
+            bool is_defined = _variables.find(var_key) != _variables.end();
+            string val = is_defined ? _variables.at(var_key) : "";
+
+            if (is_brace && !is_defined) {
+                for (auto ch : var_key) {
+                    if (isalnum(ch) || ch == '_') {
+                        continue;
+                    }
+                    cerr << "Warning: variable name `" << var_key << "` is illegal" << endl;
+                    break;
+                }
+            }
+
             size_t pos = match.position(i);
-
-            string val = _variables.find(var_key) != _variables.end() ? _variables.at(var_key) : "";
-
             if (pos > 0 && result[pos - 1] == '\\' && (pos == 1 || result[pos - 2] != '\\')) {
                 continue;
             }
