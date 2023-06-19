@@ -12,7 +12,7 @@
 #include <cstdlib>     // for exit
 #include <filesystem>  // lines 12-12
 #include <fstream>
-#include <iostream>  // for cin, cout
+#include <iostream>    // for cin, cout
 
 #include "util.h"
 
@@ -20,7 +20,7 @@ using namespace std;
 namespace fs = std::filesystem;
 
 //----------------------------------------------------------------------
-//    External funcitons
+//    External functions
 //----------------------------------------------------------------------
 void mybeep();
 
@@ -408,7 +408,7 @@ void CmdParser::listCmd(const string& str) {
 
         if (size_t firstSpacePos = str.find_first_of(' '); firstSpacePos != string::npos) {  // already has ' '; Cursor NOT on first word
             assert(_tabPressCount != 0);
-            CmdExec* e = getCmd(str.substr(0, firstSpacePos));  // first word
+            CmdExec* e = getCmd(str.substr(0, firstSpacePos));                               // first word
 
             // [case 6] Singly matched on second+ tab
             // [case 7] no match; cursor not on first word
@@ -426,7 +426,7 @@ void CmdParser::listCmd(const string& str) {
             reprintCmd();
             return;  // from cases 5, 6, 7
         }
-    }  // end of cmd string processing
+    }                // end of cmd string processing
 
     _tabPressCount = 0;
 
