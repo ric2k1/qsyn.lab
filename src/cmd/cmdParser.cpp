@@ -242,20 +242,29 @@ string CmdParser::replaceVariableKeysWithValues(string const& str) const {
     // optional: if inside ${NAME} is an illegal name string,
     // warn the user.
 
-    // not preceded by '\'
-    // regex var_regex("(?<!\\\\)\\$([a-zA-Z_][a-zA-Z0-9_]*)");
-    // regex braces_var_regex("(?<!\\\\)\\$\\{([a-zA-Z_][a-zA-Z0-9_]*)\\}");
-
     string result = str;
 
-    // loop through all variable key value pairs
-    for (auto const& [key, value] : _variables) {
-        if (regex_search(str, regex("[^\\\\]\\$" + key))) {
-            result = regex_replace(str, regex("\\$" + key), value);
+    vector<tuple<size_t, size_t, string>> to_replace;
+    for (auto re : {regex("\\$[a-zA-Z0-9_]+"), regex("\\$\\{[a-zA-Z0-9_]+\\}")}) {
+        smatch match;
+        regex_search(result, match, re);
+        for (size_t i = 0; i < match.size(); ++i) {
+            string var = match[i];
+            // tell if it is a curly brace variable or not
+            string var_key = var[1] == '{' ? var.substr(2, var.length() - 3) : var.substr(1);
+            size_t pos = match.position(i);
+
+            string val = _variables.find(var_key) != _variables.end() ? _variables.at(var_key) : "";
+
+            if (pos > 0 && result[pos - 1] == '\\' && (pos == 1 || result[pos - 2] != '\\')) {
+                continue;
+            }
+            to_replace.push_back({pos, var.length(), val});
         }
-        if (regex_search(str, regex("[^\\\\]\\$\\{" + key + "\\}"))) {
-            result = regex_replace(str, regex("\\$\\{" + key + "\\}"), value);
-        }
+    }
+
+    for (auto [pos, len, val] : to_replace) {
+        result.replace(pos, len, val);
     }
 
     // return a string with all variables substituted with their value.
