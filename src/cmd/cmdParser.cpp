@@ -13,6 +13,7 @@
 #include <filesystem>  // lines 12-12
 #include <fstream>
 #include <iostream>    // for cin, cout
+#include <regex>
 
 #include "util.h"
 
@@ -241,8 +242,24 @@ string CmdParser::replaceVariableKeysWithValues(string const& str) const {
     // optional: if inside ${NAME} is an illegal name string,
     // warn the user.
 
+    // not preceded by '\'
+    // regex var_regex("(?<!\\\\)\\$([a-zA-Z_][a-zA-Z0-9_]*)");
+    // regex braces_var_regex("(?<!\\\\)\\$\\{([a-zA-Z_][a-zA-Z0-9_]*)\\}");
+
+    string result = str;
+
+    // loop through all variable key value pairs
+    for (auto const& [key, value] : _variables) {
+        if (regex_search(str, regex("[^\\\\]\\$" + key))) {
+            result = regex_replace(str, regex("\\$" + key), value);
+        }
+        if (regex_search(str, regex("[^\\\\]\\$\\{" + key + "\\}"))) {
+            result = regex_replace(str, regex("\\$\\{" + key + "\\}"), value);
+        }
+    }
+
     // return a string with all variables substituted with their value.
-    return str;
+    return result;
     // END TODO - t4-parametrized_dofiles
 }
 

@@ -124,7 +124,10 @@ public:
     CmdExecStatus execOneCmd();
     void printHelps() const;
 
-    void addVariable(std::string const& key, std::string const& val) { _variables.emplace(key, val); }
+    void addArgument(std::string const& val) {
+        _arguments.push_back(val);
+        _variables.emplace(std::to_string(_arguments.size()), val);
+    }
 
     // public helper functions
     void printHistory() const;
@@ -161,7 +164,7 @@ private:
     void retrieveHistory();
 
     std::string replaceVariableKeysWithValues(std::string const& str) const;
-    bool checkVariablesMatchDescription(std::string const& str) const;
+    void saveArgumentsInVariables(std::string const& str);
 
     inline bool isSpecialChar(char ch) const { return _specialChars.find_first_of(ch) != std::string::npos; }
     std::pair<CmdMap::const_iterator, CmdMap::const_iterator> getCmdMatches(std::string const& str);
@@ -187,6 +190,7 @@ private:
     std::stack<std::ifstream*> _dofileStack;                  // For recursive dofile calling
     ParserState _state;                                       // The state of the command line parser
     std::unordered_map<std::string, std::string> _variables;  // stores the variables key-value pairs, e.g., $1, $INPUT_FILE, etc...
+    std::vector<std::string> _arguments;                      // stores the extra dofile arguments given when invoking the program
     std::string _dofileName;
 };
 

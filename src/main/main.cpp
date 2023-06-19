@@ -66,7 +66,11 @@ int main(int argc, char** argv) {
     if (argc == 1) {
         // try to read from stdin if no argument is given
         cmdMgr->openDofile("/dev/stdin");
-    } else if (argc == 3) {  // -file <doFile>
+    } else if (argc >= 3) {  // -file <doFile>
+        for (int i = 3; i < argc; ++i) {
+            cmdMgr->addArgument(argv[i]);
+        }
+
         if (myStrNCmp("-File", argv[1], 2) == 0) {
             if (!cmdMgr->openDofile(argv[2])) {
                 cerr << "Error: cannot open file \"" << argv[2] << "\"!!\n";
