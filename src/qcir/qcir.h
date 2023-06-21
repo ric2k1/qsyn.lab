@@ -77,6 +77,8 @@ public:
     bool writeQASM(std::string qasm_output);
 
     void countGate(bool = false);
+    void analyze(size_t=0, size_t=ERROR_CODE);
+
     void ZXMapping();
     void tensorMapping();
 

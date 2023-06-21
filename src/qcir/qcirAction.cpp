@@ -8,13 +8,218 @@
 
 #include <cassert>  // for assert
 #include <cstddef>  // for NULL, size_t
+#include <iomanip>
 
-#include "qcir.h"      // for QCir
-#include "qcirGate.h"  // for QCirGate
+#include "qcir.h"        // for QCir
+#include "qcirGate.h"    // for QCirGate
+#include "textFormat.h"  // for TextFormat
 #include "zxGraph.h"
 
 using namespace std;
+namespace TF = TextFormat;
 extern size_t verbose;
+
+/**
+ * @brief
+ *
+ * @param start
+ * @param end
+ */
+void QCir::analyze(size_t start, size_t end) {
+    updateGateTime();
+    // TODO - t3
+
+    // Hint: Useful cmd: QCSET, setting the delay of gates.
+    //       Useful functions:
+    //          gate->getDelay(): getting the delay of the QCirGate.
+    //          gate->getTime(): getting the "ending" time of the QCirGate, i.e. starting time = gate->getTime()-gate->getDelay().
+    //       You can get first gate of the qubit by class QCirQubit. Please refer to class QCirQubit and QCirGate for more information.
+
+    size_t clifford = 0;
+    size_t cxcnt = 0;
+    size_t tfamily = 0;
+    size_t nct = 0;
+    size_t total_gates = 0;
+
+    auto analysisMCR = [&clifford, &tfamily, &nct, &cxcnt](QCirGate* g) -> void {
+        if (g->getQubits().size() == 2) {
+            if (g->getPhase().denominator() == 1) {
+                clifford++;
+                if (g->getType() != GateType::MCPX || g->getType() != GateType::MCRX) clifford += 2;
+                cxcnt++;
+            } else if (g->getPhase().denominator() == 2) {
+                clifford += 2;
+                cxcnt += 2;
+                tfamily += 3;
+            } else
+                nct++;
+        } else if (g->getQubits().size() == 1) {
+            if (g->getPhase().denominator() <= 2)
+                clifford++;
+            else if (g->getPhase().denominator() == 4)
+                tfamily++;
+            else
+                nct++;
+        } else
+            nct++;
+    };
+
+    // lifted from QCir::countGate
+    auto countGates = [&](QCirQubit* qb) {
+        clifford = 0;
+        cxcnt = 0;
+        tfamily = 0;
+        nct = 0;
+        total_gates = 0;
+        QCirGate* g = qb->getFirst();
+        while (g != NULL) {
+            GateType type = g->getType();
+            total_gates++;
+            switch (type) {
+                case GateType::H:
+                    clifford++;
+                    break;
+                case GateType::P:
+                    if (g->getPhase().denominator() <= 2)
+                        clifford++;
+                    else if (g->getPhase().denominator() == 4)
+                        tfamily++;
+                    else
+                        nct++;
+                    break;
+                case GateType::RZ:
+                    if (g->getPhase().denominator() <= 2)
+                        clifford++;
+                    else if (g->getPhase().denominator() == 4)
+                        tfamily++;
+                    else
+                        nct++;
+                    break;
+                case GateType::Z:
+                    clifford++;
+                    break;
+                case GateType::S:
+                    clifford++;
+                    break;
+                case GateType::SDG:
+                    clifford++;
+                    break;
+                case GateType::T:
+                    tfamily++;
+                    break;
+                case GateType::TDG:
+                    tfamily++;
+                    break;
+                case GateType::RX:
+                    if (g->getPhase().denominator() <= 2)
+                        clifford++;
+                    else if (g->getPhase().denominator() == 4)
+                        tfamily++;
+                    else
+                        nct++;
+                    break;
+                case GateType::X:
+                    clifford++;
+                    break;
+                case GateType::SX:
+                    clifford++;
+                    break;
+                case GateType::RY:
+                    if (g->getPhase().denominator() <= 2)
+                        clifford++;
+                    else if (g->getPhase().denominator() == 4)
+                        tfamily++;
+                    else
+                        nct++;
+                    break;
+                case GateType::Y:
+                    clifford++;
+                    break;
+                case GateType::SY:
+                    clifford++;
+                    break;
+                case GateType::MCP:
+                    analysisMCR(g);
+                    break;
+                case GateType::CZ:
+                    clifford += 3;  // H-X-H
+                    cxcnt++;
+                    break;
+                case GateType::CCZ:
+                    tfamily += 7;
+                    clifford += 10;
+                    cxcnt += 6;
+                    break;
+                case GateType::MCRX:
+                    analysisMCR(g);
+                    break;
+                case GateType::CX:
+                    clifford++;
+                    cxcnt++;
+                    break;
+                case GateType::CCX:
+                    tfamily += 7;
+                    clifford += 8;
+                    cxcnt += 6;
+                    break;
+                case GateType::MCRY:
+                    analysisMCR(g);
+                    break;
+                default:
+                    cerr << "Error: the gate type is ERRORTYPE" << endl;
+                    break;
+            }
+
+            g = g->getQubit(qb->getId())._child;
+        }
+    };
+
+    size_t total_time = 0;
+    vector<size_t> qubit_empty_time = vector<size_t>(_qubits.size(), 0);
+    vector<size_t> qubit_end_time = vector<size_t>(_qubits.size(), 0);
+    for (auto qb : _qubits) {
+        QCirGate* gate = qb->getFirst();
+        QCirGate* next = NULL;
+        size_t empty_time = gate->getTime() - gate->getDelay();
+        while (gate != NULL) {
+            next = gate->getQubit(qb->getId())._child;
+            if (next == NULL) {
+                break;
+            }
+            empty_time += (next->getTime() - next->getDelay()) - gate->getTime();
+            gate = next;
+        }
+        size_t end_time = qb->getLast()->getTime();
+        qubit_end_time[qb->getId()] = end_time;
+        total_time = max(total_time, end_time);
+        qubit_empty_time[qb->getId()] = empty_time;
+    }
+
+    for (auto qb : _qubits) {
+        std::cout << TF::BOLD("Q " + to_string(qb->getId()) + ":\t");
+
+        countGates(qb);
+        cout << TF::GREEN("Total: " + to_string(total_gates)) << ", ";
+        cout << TF::GREEN("Clifford: " + to_string(clifford)) << ", ";
+        cout << TF::RED("2-qubit: " + to_string(cxcnt)) << ", ";
+        cout << TF::RED("T-family: " + to_string(tfamily)) << ", ";
+        if (nct > 0)
+            cout << TF::BOLD(TF::RED("Others: " + to_string(nct)));
+        else
+            cout << TF::BOLD(TF::GREEN("Others: " + to_string(nct)));
+
+        std::cout << endl;
+
+        qubit_empty_time[qb->getId()] += total_time - qubit_end_time[qb->getId()];
+        float usage_rate = 100.0 - ((qubit_empty_time[qb->getId()] * 100.0) / total_time);
+        ostringstream oss;
+        oss << "usage rate: " << setfill(' ') << setw(5) << setprecision(2) << fixed
+            << usage_rate << "%";
+        cout << '\t' << (usage_rate >= 80 ? TF::BOLD(TF::GREEN(oss.str())) : TF::BOLD(TF::RED(oss.str())))
+             << '\n'
+             << endl;
+    }
+}
 
 /**
  * @brief Copy a circuit
