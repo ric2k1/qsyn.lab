@@ -63,10 +63,7 @@ int main(int argc, char** argv) {
     // ./qsyn [-File <dofile.dof> [arguments...]]
     // use `cmdMgr->addVariable(key, val)` to add variable to the parser.
 
-    if (argc == 1) {
-        // try to read from stdin if no argument is given
-        cmdMgr->openDofile("/dev/stdin");
-    } else if (argc >= 3) {  // -file <doFile>
+    if (argc >= 3) {  // -file <doFile>
         for (int i = 3; i < argc; ++i) {
             cmdMgr->addArgument(argv[i]);
         }
@@ -80,7 +77,7 @@ int main(int argc, char** argv) {
             cerr << "Error: unknown argument \"" << argv[1] << "\"!!\n";
             myexit();
         }
-    } else {
+    } else if (argc != 1) {
         cerr << "Error: illegal number of argument (" << argc << ")!!\n";
         myexit();
     }
