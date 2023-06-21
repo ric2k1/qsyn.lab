@@ -242,13 +242,11 @@ string CmdParser::replaceVariableKeysWithValues(string const& str) const {
     // optional: if inside ${NAME} is an illegal name string,
     // warn the user.
 
-    string result = str;
-
     vector<tuple<size_t, size_t, string>> to_replace;
     // \S means non-whitespace character
     for (auto re : {regex("\\$[a-zA-Z0-9_]+"), regex("\\$\\{\\S+\\}")}) {
         smatch match;
-        regex_search(result, match, re);
+        regex_search(str, match, re);
         for (size_t i = 0; i < match.size(); ++i) {
             string var = match[i];
             // tell if it is a curly brace variable or not
@@ -269,16 +267,21 @@ string CmdParser::replaceVariableKeysWithValues(string const& str) const {
             }
 
             size_t pos = match.position(i);
-            if (pos > 0 && result[pos - 1] == '\\' && (pos == 1 || result[pos - 2] != '\\')) {
+            if (pos > 0 && str[pos - 1] == '\\' && (pos == 1 || str[pos - 2] != '\\')) {
                 continue;
             }
             to_replace.push_back({pos, var.length(), val});
         }
     }
 
+    size_t cursor = 0;
+    string result = "";
     for (auto [pos, len, val] : to_replace) {
-        result.replace(pos, len, val);
+        result += str.substr(cursor, pos - cursor);
+        result += val;
+        cursor = pos + len;
     }
+    result += str.substr(cursor);
 
     // return a string with all variables substituted with their value.
     return result;
