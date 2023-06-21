@@ -44,7 +44,7 @@ extern MyUsage myUsage;
 
 static void
 usage() {
-    cout << "Usage: ./qsyn [ -File < doFile > ]" << endl;
+    cout << "Usage: ./qsyn [-File < doFile > [arguments...]]" << endl;
 }
 
 static void
@@ -58,7 +58,16 @@ int main(int argc, char** argv) {
 
     signal(SIGINT, [](int signum) -> void { cmdMgr->sigintHandler(signum); return; });
 
-    if (argc == 3) {  // -file <doFile>
+    // TODO - t4-parametrized_dofiles
+    // change the parsing logic here so that qsyn accepts the following format:
+    // ./qsyn [-File <dofile.dof> [arguments...]]
+    // use `cmdMgr->addVariable(key, val)` to add variable to the parser.
+
+    if (argc >= 3) {  // -file <doFile>
+        for (int i = 3; i < argc; ++i) {
+            cmdMgr->addArgument(argv[i]);
+        }
+
         if (myStrNCmp("-File", argv[1], 2) == 0) {
             if (!cmdMgr->openDofile(argv[2])) {
                 cerr << "Error: cannot open file \"" << argv[2] << "\"!!\n";
@@ -74,6 +83,8 @@ int main(int argc, char** argv) {
     }
 
     cout << "DV Lab, NTUEE, Qsyn 0.4.2" << endl;
+
+    // END TODO - t4-parametrized_dofiles
 
     if (
         // !initArgParserCmd() ||
@@ -96,7 +107,7 @@ int main(int argc, char** argv) {
 
     while (status != CMD_EXEC_QUIT) {  // until "quit" or command error
         status = cmdMgr->execOneCmd();
-        cout << endl;  // a blank line between each command
+        cout << endl;                  // a blank line between each command
     }
 
     return 0;
