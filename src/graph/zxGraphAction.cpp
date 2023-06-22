@@ -8,6 +8,7 @@
 
 #include <cstddef>  // for size_t
 #include <iostream>
+#include <vector>
 
 #include "phase.h"       // for Phase
 #include "textFormat.h"  // for TextFormat
@@ -337,5 +338,73 @@ void ZXGraph::normalize() {
     //  (2) For each qubit, reassign the `col` index for each ZXVertex* in vec from 0 to vec.size()-1
     //
     // 👆 This is not a good method, but a very simple method. Try to implement it, optimize it or find out your own solution! 💪💪💪 Good Luck!
+    // forEachEdge([](const EdgePair& epair) {
+    //      cout << "( " << epair.first.first->getCol() << ", " << epair.first.second->getCol() << " )\tType:\t" << EdgeType2Str(epair.second) << endl;
+    // });
+    
+    int minrow = 0; // minimum index of row(Qubit)
+    int vRow = 0; // row for the vertex
+    int rowNum = 0; // num of row
+    int counter = 0; // count the location for insert
+    int vNumMax = 0; // maximum vertex number in a row
+    for(auto& v : getVertices()){ // find the minimum index of row
+        if(v->getQubit() < minrow) minrow = v->getQubit(); 
+    }
+    rowNum = getNumInputs() - minrow; // define new rowIndex start from 0
+    int vNumList[rowNum] = {0}; // vertex num of each row
+    vector<vector<ZXVertex*>> vMatrix(rowNum); // define verticex matrix to store the location
 
+    // =================== build the vertex matrix ===================
+    for(auto& v : getVertices()){
+        counter = 0; // count the location for insersion (by columns)
+        vRow = v->getQubit()-minrow; 
+        vNumList[vRow]++;// count the num of vertices for each row
+        if(vMatrix[vRow].empty()) vMatrix[vRow].push_back(v); // add vertex if empty
+        else {
+            for(int i=0; i< int(vMatrix[vRow].size()); i++){
+                if(v->getCol()>vMatrix[vRow][counter]->getCol()){
+                    counter ++;
+                }
+            }
+            vMatrix[vRow].insert(vMatrix[vRow].begin()+counter, v);
+            counter = 0;
+        }
+    }
+
+    for(int i=0; i<rowNum; i++){ // find the most num of vertices in a row
+        if(vNumList[i]>vNumMax) vNumMax=vNumList[i];
+    }
+
+    // =================== main algorithm ===================
+    // Intro: build a symmetric graph with seperating the first and the last vertices of a qubit, and equally distribute the rest vertices.
+    for(int i=0; i<int(vMatrix.size()); i++){
+        if(i < -minrow){
+            for(int j=0; j<vNumList[i]; j++){
+                vMatrix[i][j]->setCol(2+j*float(vNumMax)/float(vNumList[i]));
+            }
+        }
+        else{
+            for(int j=0; j<vNumList[i]; j++){
+                if(vNumList[i]<4) vMatrix[i][j]->setCol(j*float(vNumMax+3)/float(vNumList[i]-1));
+                else{
+                    if(j<2) vMatrix[i][j]->setCol(j);
+                    else if(j>=vNumList[i]-2) vMatrix[i][j]->setCol(vNumMax+4+j-vNumList[i]);
+                    else vMatrix[i][j]->setCol(1+(j-1)*float(vNumMax+1)/float(vNumList[i]-3));
+                }
+            }
+        }
+    }
+    
+    // =================== print the vertices matrix in terminal ===================
+    for(int i=0;i<int(vMatrix.size());i++){
+        for(int j=0;j<int(vMatrix[i].size());j++){
+            cout<<vMatrix[i][j]->getId()<<" " ;
+        }
+		cout<<endl;
+	}
 }
+
+
+// qccread ./benchmark/benchmark_SABRE/small/3_17_13.qasm
+// qc2zx
+// zxgsimp -fr
