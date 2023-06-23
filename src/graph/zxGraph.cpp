@@ -475,9 +475,6 @@ void ZXGraph::normalize() {
         }
     }
 
-    
-    // NOT IMPORTANT
-
 }
 
 /**
