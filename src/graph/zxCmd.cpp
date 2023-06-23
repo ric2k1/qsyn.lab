@@ -44,7 +44,8 @@ bool initZXCmd() {
           cmdMgr->regCmd("ZXGDraw", 4, make_unique<ZXGDrawCmd>()) &&
           cmdMgr->regCmd("ZX2TS", 5, make_unique<ZX2TSCmd>()) &&
           cmdMgr->regCmd("ZXGRead", 4, make_unique<ZXGReadCmd>()) &&
-          cmdMgr->regCmd("ZXGWrite", 4, make_unique<ZXGWriteCmd>()))) {
+          cmdMgr->regCmd("ZXGWrite", 4, make_unique<ZXGWriteCmd>()) &&
+          cmdMgr->regCmd("ZXGNormalize", 4, make_unique<ZXGNormalizeCmd>()))) {
         cerr << "Registering \"zx\" commands fails... exiting" << endl;
         return false;
     }
@@ -895,4 +896,25 @@ void ZXGAdjointCmd::usage() const {
 void ZXGAdjointCmd::summary() const {
     cout << setw(15) << left << "ZXGADJoint: "
          << "adjoint ZX-graph\n";
+}
+
+//----------------------------------------------------------------------
+//    ZXGADJoint
+//----------------------------------------------------------------------
+CmdExecStatus
+ZXGNormalizeCmd::exec(const string &option) {
+    if (!lexNoOption(option)) return CMD_EXEC_ERROR;
+    ZX_CMD_GRAPHMGR_NOT_EMPTY_OR_RETURN("ZXGNormalize");
+    // cout << "in ZXGNormalize" << endl;
+    zxGraphMgr->getGraph()->normalize();
+    return CMD_EXEC_DONE;
+}
+
+void ZXGNormalizeCmd::usage() const {
+    cout << "Usage: ZXGNormalize" << endl;
+}
+
+void ZXGNormalizeCmd::summary() const {
+    cout << setw(15) << left << "ZXGADJoint: "
+         << "normalize ZX-graph\n";
 }

@@ -200,6 +200,7 @@ public:
     void removeGadget(ZXVertex* v);
     std::unordered_map<size_t, ZXVertex*> id2VertexMap() const;
     void mergeInputList(std::unordered_map<size_t, ZXVertex*> lst) { _inputList.merge(lst); }
+    void normalize();
     void mergeOutputList(std::unordered_map<size_t, ZXVertex*> lst) { _outputList.merge(lst); }
     void disownVertices();
 

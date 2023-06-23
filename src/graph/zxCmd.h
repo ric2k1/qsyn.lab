@@ -33,6 +33,7 @@ CmdClass(ZXGReadCmd);
 CmdClass(ZXGWriteCmd);
 CmdClass(ZXGAdjointCmd);
 CmdClass(ZXGAssignCmd);
+CmdClass(ZXGNormalizeCmd);
 
 #define ZX_CMD_QUBIT_ID_VALID_OR_RETURN(option, qid)         \
     {                                                        \
