@@ -63,7 +63,7 @@ int main(int argc, char** argv) {
     // ./qsyn [-File <dofile.dof> [arguments...]]
     // use `cmdMgr->addVariable(key, val)` to add variable to the parser.
 
-    if (argc == 3) {  // -file <doFile>
+    if (argc >= 3) {  // -file <doFile>
         if (myStrNCmp("-File", argv[1], 2) == 0) {
             if (!cmdMgr->openDofile(argv[2])) {
                 cerr << "Error: cannot open file \"" << argv[2] << "\"!!\n";
@@ -73,7 +73,13 @@ int main(int argc, char** argv) {
             cerr << "Error: unknown argument \"" << argv[1] << "\"!!\n";
             myexit();
         }
-    } else if (argc != 1) {
+
+        // TODO - t4-parametrized_dofiles
+        // add the arguments to the parser
+        for (int i = 3; i < argc; ++i) {
+            cmdMgr->addVariable(to_string(i - 2), argv[i]);
+        }
+    } else if (argc == 2) {
         cerr << "Error: illegal number of argument (" << argc << ")!!\n";
         myexit();
     }

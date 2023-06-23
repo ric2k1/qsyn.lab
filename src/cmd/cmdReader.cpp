@@ -299,6 +299,17 @@ bool CmdParser::addHistory() {
 
             // You probably need the member _dofileName and _variables
 
+            cout << "Usage: ./qsyn -f ";
+            cout << _dofileName << " ";
+            _readBuf.erase(0, 8);
+            stringstream ss(_readBuf);
+            string token;
+            while (ss >> token) {
+                cout << "<" << token << ">" << " ";
+            }
+            cout << endl;
+
+
             // END TODO - t4-parametrized_dofiles
             exit(1);
         }
@@ -327,6 +338,28 @@ bool CmdParser::checkVariablesMatchDescription(std::string const& str) const {
     // "//!ARGS n <ARG1> <ARG2> ... <ARGn>"
     // and check if for all k = 1 to n,
     // _variables[to_string(k)] is mapped to a valid value
+    
+    vector<string> tokens;
+    stringstream ss(str);
+    string token;
+    while (ss >> token)
+        tokens.push_back(token);
+
+    if (tokens.size() < 3 || tokens[0] != "//!ARGS")
+        return false;
+
+    int n = stoi(tokens[1]);
+    if (n < 0)
+        return false;
+
+    if (tokens.size() != size_t(n + 2))
+        return false;
+
+    for (int i = 0; i < n; ++i) {
+        if (_variables.find(to_string(i + 1)) == _variables.end())
+            return false;
+        _variables[token[i + 2]] = _variables[to_string(i + 1)];
+    }
 
     // To enable keyword arguments, also map the names <ARGk>
     // to _variables[to_string(k)]
