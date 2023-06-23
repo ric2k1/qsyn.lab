@@ -301,12 +301,6 @@ void ZXGraph::addInputs(const ZXVertexList& inputs) {
     _inputs.insert(inputs.begin(), inputs.end());
 }
 
-struct vertex{
-    int id;
-    int column;
-    int qubit;
-};
-
 void ZXGraph::normalize() {
     // TODO: Start writing your code!
 
