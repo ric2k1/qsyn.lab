@@ -11,6 +11,7 @@
 #include <cstddef>  // for size_t
 #include <iomanip>
 #include <iostream>
+#include <map>
 
 #include "gFlow.h"
 #include "zxGraph.h"  // for ZXGraph
@@ -279,7 +280,7 @@ void Simplifier::toRGraph() {
 int Simplifier::interiorCliffordSimp() {
     this->sfusionSimp();
     toGraph();
-
+    
     int i = 0;
     while (true) {
         int i1 = this->idSimp();
@@ -358,6 +359,95 @@ void Simplifier::partitionReduce(int d) {
     //
     //       to get/set the `col` of a ZXVertex, you can use `v->getCol()`
     // 
+    vector<ZXGraph* > vec;
+    
+    int maxCol = 0;
+    for(auto& v : _simpGraph->getVertices()) {
+        int col = v->getCol();
+        if(col > maxCol) maxCol = col;
+    }
+    ///
+    for(int idx = 0; idx < d; idx++) {
+        ZXGraph* subGraph = new ZXGraph(idx);
+        auto simpGraph = _simpGraph->copy();
+        int splitSize = (maxCol+1) / d;
+        int left = idx * splitSize, right = (idx + 1) * splitSize;
+        ZXVertexList subGraphList, inputList, outputList;
+        map<int, ZXVertex*> addedBoundaries;
+        for(auto& v : simpGraph->getInputs()) {
+            int col = v->getCol();
+            if(col >= left && col < right) {
+                inputList.insert(v);
+            }
+        }
+        for(auto& v : simpGraph->getOutputs()) {
+            int col = v->getCol();
+            if(col >= left && col < right) {
+                outputList.insert(v);
+            }
+        }
+        for(auto& v : simpGraph->getVertices()) {
+            int col = v->getCol();
+            if(col >= left && col < right) {
+                // insert node v into ZXGraph #idx
+                subGraphList.insert(v);
+                
+                // add output or input vertecies
+                auto nei = v->getCopiedNeighbors();
+                
+                for(auto& i : nei) {
+                    int neiCol = i->getCol();
+                    if(neiCol < left || neiCol >= right) {
+                        // cout << "add neighbor " << i->getId() << endl;
+                        if(!addedBoundaries.count(i->getId())) {
+                            ZXVertex* bdr = new ZXVertex(i->getId(), i->getQubit(), VertexType::BOUNDARY, Phase(0), i->getCol());
+                            bdr->addNeighbor(NeighborPair(v, EdgeType::SIMPLE));
+                            v->removeNeighbor(NeighborPair(i, EdgeType::SIMPLE));
+                            v->addNeighbor(NeighborPair(bdr, EdgeType::SIMPLE));
+                            addedBoundaries[i->getId()] = bdr;
+                        }
+                        else {
+                            auto bdr = addedBoundaries[i->getId()];
+                            bdr->addNeighbor(NeighborPair(v, EdgeType::SIMPLE));
+                            v->removeNeighbor(NeighborPair(i, EdgeType::SIMPLE));
+                            v->addNeighbor(NeighborPair(bdr, EdgeType::SIMPLE));
+                        }
+                    }
+                }
+            }
+        }
+        
+        for(auto& v : addedBoundaries) {
+            auto bdr = v.second;
+            subGraphList.insert(bdr);
+            if(bdr->getCol() < left) inputList.insert(bdr);
+            else outputList.insert(bdr);
+        }
+        
+        subGraph->setVertices(subGraphList);
+        subGraph = subGraph->copy();
+        subGraph->setInputs(inputList);
+        subGraph->setOutputs(outputList);
+        
+        // normalize id
+        int id = 0;
+        for(auto& v : subGraph->getVertices()) {
+            v->setId(id++);
+        }
+        
+        Simplifier* simp = new Simplifier((std::unique_ptr<ZXRule>)this->getRule(), subGraph);
+        simp->fullReduce();
+        
+        vec.push_back(subGraph);
+    }
+    
+    auto composedGraph = vec[0];
+    for(unsigned long i = 1; i < vec.size(); ++i) {
+        composedGraph = composedGraph->compose(vec[i]);
+    }
+    _simpGraph = composedGraph;
+    this->fullReduce();
+    
     // A simple method:
     //  (1) Trace through all vertices and use a new vector(vector<ZXGraph* > vec) to store the i-th sub-graph vertices
     //  (2) As a reminder, after each cut of the ZX-graph, you should remember to add outputs to the cut sub-graph, and add inputs to the remain one. (This step is a little tricky!)
@@ -365,7 +455,7 @@ void Simplifier::partitionReduce(int d) {
     //  (4) Use `compose` defined in `src/graph/zxGraphAction.cpp` to combine each sub ZX-graph in the correct order.
     //  (5) (Optional) After combination, call `fullReduce` again to make the ZX-graph optimal.
     //
-    // 👆 This is one of the methods. Try to implement it, optimize it or find out your own solution! 💪💪💪 Good Luck!
+    // ?? This is one of the methods. Try to implement it, optimize it or find out your own solution! ?Ҫ?Ҫ?Ҫ Good Luck!
     
     
 }
