@@ -227,29 +227,6 @@ void QCir::analyze(size_t start, size_t end) {
     size_t tfamily = 0;
     size_t cxcnt = 0;
     size_t nct = 0;
-
-    size_t h = 0;
-    size_t rz = 0;
-    size_t z = 0;
-    size_t s = 0;
-    size_t sdg = 0;
-    size_t t = 0;
-    size_t tdg = 0;
-    size_t rx = 0;
-    size_t x = 0;
-    size_t sx = 0;
-    size_t ry = 0;
-    size_t y = 0;
-    size_t sy = 0;
-
-    size_t mcp = 0;
-    size_t cz = 0;
-    size_t ccz = 0;
-    size_t crz = 0;
-    size_t mcrx = 0;
-    size_t cx = 0;
-    size_t ccx = 0;
-    size_t mcry = 0;
     size_t total = 0;
     auto analysisMCR = [&clifford, &tfamily, &nct, &cxcnt](QCirGate *g) -> void {
         if (g->getQubits().size() == 2) {
@@ -278,29 +255,6 @@ void QCir::analyze(size_t start, size_t end) {
         tfamily = 0;
         cxcnt = 0;
         nct = 0;
-
-        h = 0;
-        rz = 0;
-        z = 0;
-        s = 0;
-        sdg = 0;
-        t = 0;
-        tdg = 0;
-        rx = 0;
-        x = 0;
-        sx = 0;
-        ry = 0;
-        y = 0;
-        sy = 0;
-
-        mcp = 0;
-        cz = 0;
-        ccz = 0;
-        crz = 0;
-        mcrx = 0;
-        cx = 0;
-        ccx = 0;
-        mcry = 0;
         total = 0;
         QCirGate* g = qb->getFirst();   //first gate
         while(g != NULL) {
@@ -309,11 +263,11 @@ void QCir::analyze(size_t start, size_t end) {
                 total++;
                 switch (type) {
                     case GateType::H:
-                        h++;
+                        //h++;
                         clifford++;
                         break;
                     case GateType::P:
-                        rz++;
+                        //rz++;
                         if (g->getPhase().denominator() <= 2)
                             clifford++;
                         else if (g->getPhase().denominator() == 4)
@@ -322,7 +276,7 @@ void QCir::analyze(size_t start, size_t end) {
                             nct++;
                         break;
                     case GateType::RZ:
-                        rz++;
+                        //rz++;
                         if (g->getPhase().denominator() <= 2)
                             clifford++;
                         else if (g->getPhase().denominator() == 4)
@@ -331,27 +285,27 @@ void QCir::analyze(size_t start, size_t end) {
                             nct++;
                         break;
                     case GateType::Z:
-                        z++;
+                        //z++;
                         clifford++;
                         break;
                     case GateType::S:
-                        s++;
+                        //s++;
                         clifford++;
                         break;
                     case GateType::SDG:
-                        sdg++;
+                        //sdg++;
                         clifford++;
                         break;
                     case GateType::T:
-                        t++;
+                        //t++;
                         tfamily++;
                         break;
                     case GateType::TDG:
-                        tdg++;
+                        //tdg++;
                         tfamily++;
                         break;
                     case GateType::RX:
-                        rx++;
+                        //rx++;
                         if (g->getPhase().denominator() <= 2)
                             clifford++;
                         else if (g->getPhase().denominator() == 4)
@@ -360,15 +314,15 @@ void QCir::analyze(size_t start, size_t end) {
                             nct++;
                         break;
                     case GateType::X:
-                        x++;
+                        //x++;
                         clifford++;
                         break;
                     case GateType::SX:
-                        sx++;
+                        //sx++;
                         clifford++;
                         break;
                     case GateType::RY:
-                        ry++;
+                        //ry++;
                         if (g->getPhase().denominator() <= 2)
                             clifford++;
                         else if (g->getPhase().denominator() == 4)
@@ -377,45 +331,45 @@ void QCir::analyze(size_t start, size_t end) {
                             nct++;
                         break;
                     case GateType::Y:
-                        y++;
+                        //y++;
                         clifford++;
                         break;
                     case GateType::SY:
-                        sy++;
+                        //sy++;
                         clifford++;
                         break;
                     case GateType::MCP:
-                        mcp++;
+                        //mcp++;
                         analysisMCR(g);
                         break;
                     case GateType::CZ:
-                        cz++;           // --C--
+                        //cz++;           // --C--
                         clifford += 3;  // H-X-H
                         cxcnt++;
                         break;
                     case GateType::CCZ:
-                        cz++;
+                        //cz++;
                         tfamily += 7;
                         clifford += 10;
                         cxcnt += 6;
                         break;
                     case GateType::MCRX:
-                        mcrx++;
+                        //mcrx++;
                         analysisMCR(g);
                         break;
                     case GateType::CX:
-                        cx++;
+                        //cx++;
                         clifford++;
                         cxcnt++;
                         break;
                     case GateType::CCX:
-                        ccx++;
+                        //ccx++;
                         tfamily += 7;
                         clifford += 8;
                         cxcnt += 6;
                         break;
                     case GateType::MCRY:
-                        mcry++;
+                        //mcry++;
                         analysisMCR(g);
                         break;
                     default:
