@@ -83,6 +83,8 @@ public:
     void clearMapping();
     void updateGateTime();
     void printZXTopoOrder();
+    
+    void analyze(size_t=0, size_t=std::numeric_limits<size_t>::max());
 
     // DFS functions
     template <typename F>
