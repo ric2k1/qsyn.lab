@@ -11,6 +11,7 @@
 #include <cstddef>   // for size_t, NULL
 #include <iostream>  // for ostream
 #include <string>    // for string
+#include <limits>    // for size_t max value
 
 #include "apCmd.h"
 #include "cmdMacros.h"  // for CMD_N_OPTS_AT_MOST_OR_RETURN
@@ -44,6 +45,7 @@ unique_ptr<ArgParseCmdType> QCirDeleteQubitCmd();
 unique_ptr<ArgParseCmdType> QCir2ZXCmd();
 unique_ptr<ArgParseCmdType> QCir2TSCmd();
 unique_ptr<ArgParseCmdType> QCirWriteCmd();
+unique_ptr<ArgParseCmdType> QCirAnalyzeCmd();
 
 bool initQCirCmd() {
     qcirMgr = new QCirMgr;
@@ -65,7 +67,8 @@ bool initQCirCmd() {
           cmdMgr->regCmd("QCGPrint", 4, QCirGatePrintCmd()) &&
           cmdMgr->regCmd("QC2ZX", 5, QCir2ZXCmd()) &&
           cmdMgr->regCmd("QC2TS", 5, QCir2TSCmd()) &&
-          cmdMgr->regCmd("QCCWrite", 4, QCirWriteCmd()))) {
+          cmdMgr->regCmd("QCCWrite", 4, QCirWriteCmd()) &&
+          cmdMgr->regCmd("QCCANalyze", 5, QCirAnalyzeCmd()))) {
         cerr << "Registering \"qcir\" commands fails... exiting" << endl;
         return false;
     }
@@ -879,5 +882,41 @@ unique_ptr<ArgParseCmdType> QCirWriteCmd() {
         return CMD_EXEC_DONE;
     };
 
+    return cmd;
+}
+
+//----------------------------------------------------------------------
+//    QCCANalyze [-start (size_t startTime)] [-end (size_t endTime)]
+//----------------------------------------------------------------------
+
+unique_ptr<ArgParseCmdType> QCirAnalyzeCmd() {
+    auto cmd = make_unique<ArgParseCmdType>("QCCANalyze");
+
+    cmd->parserDefinition = [](ArgumentParser &parser) {
+        parser.help("Given a quantum circuit and time range, analysis the circuit.");
+
+        parser.addArgument<size_t>("-start")
+            .defaultValue(0)
+            .help("startTime of the analysis");
+
+        parser.addArgument<size_t>("-end")
+            .defaultValue(std::numeric_limits<size_t>::max()) 
+            .help("endTime of the analysis");
+    };
+
+    cmd->onParseSuccess = [](ArgumentParser const &parser) {
+        QC_CMD_MGR_NOT_EMPTY_OR_RETURN("QCCANalyze");
+        size_t start = 0;
+        size_t end = numeric_limits<size_t>::max(); 
+        if (parser["-start"].isParsed()) start = parser["-start"];
+        if (parser["-end"].isParsed()) end = parser["-end"];
+        if (end >= start) {
+            //analyze will print the result.
+            qcirMgr->getQCircuit()->analyze(start, end);
+        } else {
+            cout << "Error: The endTime is smaller than the startTime, which is unreasonable.\n";
+        }
+        return CMD_EXEC_DONE;
+    };
     return cmd;
 }

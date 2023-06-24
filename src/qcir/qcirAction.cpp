@@ -8,12 +8,17 @@
 
 #include <cassert>  // for assert
 #include <cstddef>  // for NULL, size_t
+#include <iomanip>
+#include <iostream>
+#include <sstream>
 
 #include "qcir.h"      // for QCir
 #include "qcirGate.h"  // for QCirGate
 #include "zxGraph.h"
+#include "textFormat.h"  // for TextFormat
 
 using namespace std;
+namespace TF = TextFormat;
 extern size_t verbose;
 
 /**
@@ -204,4 +209,205 @@ void QCir::reset() {
     _dirty = true;
     _globalDFScounter = 1;
     _tensor = nullptr;
+}
+
+
+ 
+/**
+ * @brief Given a quantum circuit and time range, analysis the circuit.
+ *
+ * @param start
+ * @param end
+ * @return QCir*
+ */
+
+void QCir::analyze(size_t start, size_t end) {
+    updateGateTime();
+    size_t clifford = 0;
+    size_t tfamily = 0;
+    size_t cxcnt = 0;
+    size_t nct = 0;
+    size_t total = 0;
+    auto analysisMCR = [&clifford, &tfamily, &nct, &cxcnt](QCirGate *g) -> void {
+        if (g->getQubits().size() == 2) {
+            if (g->getPhase().denominator() == 1) {
+                clifford++;
+                if (g->getType() != GateType::MCPX || g->getType() != GateType::MCRX) clifford += 2;
+                cxcnt++;
+            } else if (g->getPhase().denominator() == 2) {
+                clifford += 2;
+                cxcnt += 2;
+                tfamily += 3;
+            } else
+                nct++;
+        } else if (g->getQubits().size() == 1) {
+            if (g->getPhase().denominator() <= 2)
+                clifford++;
+            else if (g->getPhase().denominator() == 4)
+                tfamily++;
+            else
+                nct++;
+        } else
+            nct++;
+    };
+    auto countGates = [&](QCirQubit* qb) {
+        clifford = 0;
+        tfamily = 0;
+        cxcnt = 0;
+        nct = 0;
+        total = 0;
+        QCirGate* g = qb->getFirst();   //first gate
+        while(g != NULL) {
+            if((g->getTime()-g->getDelay()) >=start && (g->getTime()) <= end){
+                GateType type = g->getType();
+                total++;
+                switch (type) {
+                    case GateType::H:
+                        //h++;
+                        clifford++;
+                        break;
+                    case GateType::P:
+                        //rz++;
+                        if (g->getPhase().denominator() <= 2)
+                            clifford++;
+                        else if (g->getPhase().denominator() == 4)
+                            tfamily++;
+                        else
+                            nct++;
+                        break;
+                    case GateType::RZ:
+                        //rz++;
+                        if (g->getPhase().denominator() <= 2)
+                            clifford++;
+                        else if (g->getPhase().denominator() == 4)
+                            tfamily++;
+                        else
+                            nct++;
+                        break;
+                    case GateType::Z:
+                        //z++;
+                        clifford++;
+                        break;
+                    case GateType::S:
+                        //s++;
+                        clifford++;
+                        break;
+                    case GateType::SDG:
+                        //sdg++;
+                        clifford++;
+                        break;
+                    case GateType::T:
+                        //t++;
+                        tfamily++;
+                        break;
+                    case GateType::TDG:
+                        //tdg++;
+                        tfamily++;
+                        break;
+                    case GateType::RX:
+                        //rx++;
+                        if (g->getPhase().denominator() <= 2)
+                            clifford++;
+                        else if (g->getPhase().denominator() == 4)
+                            tfamily++;
+                        else
+                            nct++;
+                        break;
+                    case GateType::X:
+                        //x++;
+                        clifford++;
+                        break;
+                    case GateType::SX:
+                        //sx++;
+                        clifford++;
+                        break;
+                    case GateType::RY:
+                        //ry++;
+                        if (g->getPhase().denominator() <= 2)
+                            clifford++;
+                        else if (g->getPhase().denominator() == 4)
+                            tfamily++;
+                        else
+                            nct++;
+                        break;
+                    case GateType::Y:
+                        //y++;
+                        clifford++;
+                        break;
+                    case GateType::SY:
+                        //sy++;
+                        clifford++;
+                        break;
+                    case GateType::MCP:
+                        //mcp++;
+                        analysisMCR(g);
+                        break;
+                    case GateType::CZ:
+                        //cz++;           // --C--
+                        clifford += 3;  // H-X-H
+                        cxcnt++;
+                        break;
+                    case GateType::CCZ:
+                        //cz++;
+                        tfamily += 7;
+                        clifford += 10;
+                        cxcnt += 6;
+                        break;
+                    case GateType::MCRX:
+                        //mcrx++;
+                        analysisMCR(g);
+                        break;
+                    case GateType::CX:
+                        //cx++;
+                        clifford++;
+                        cxcnt++;
+                        break;
+                    case GateType::CCX:
+                        //ccx++;
+                        tfamily += 7;
+                        clifford += 8;
+                        cxcnt += 6;
+                        break;
+                    case GateType::MCRY:
+                        //mcry++;
+                        analysisMCR(g);
+                        break;
+                    default:
+                        cerr << "Error: the gate type is ERRORTYPE" << endl;
+                        break;
+                }
+            }
+            g = g->getQubit(qb->getId())._child; //next gate
+        }
+    };
+    size_t depth = 0;
+    size_t current_max_depth = 0;
+    for (size_t i = 0; i < _qgates.size(); i++) {
+        if (_qgates[i]->getTime() > current_max_depth && (_qgates[i]->getTime()-_qgates[i]->getDelay()) >=start && (_qgates[i]->getTime()) <= end) {
+            current_max_depth = _qgates[i]->getTime();
+            depth ++;
+        }
+    }
+    cout << "───── Quantum Circuit Analysis ─────" << endl;
+    for (auto qb : _qubits) {
+         cout << TF::BOLD(TF::YELLOW("Qubit " + to_string(qb->getId()) + ": ")) << endl;
+
+         countGates(qb);
+         cout << TF::BOLD(TF::MAGENTA("Total       : " + to_string(total))) << endl;
+         cout << TF::BOLD(TF::GREEN("Clifford    : " + to_string(clifford))) << endl;
+         cout << "└── " << TF::BOLD(TF::RED("2-qubit : " + to_string(cxcnt))) << endl;
+         cout << TF::BOLD(TF::CYAN("T-family    : " + to_string(tfamily))) << endl;
+         if (nct > 0){
+             cout << TF::BOLD(TF::MAGENTA("Others      : " + to_string(nct))) << endl;
+         }
+         else{
+             cout << TF::BOLD(TF::GRAY("Others      : " + to_string(nct))) << endl;
+         }
+         float usage = float(total) * 100 /float(depth);
+         ostringstream oss;
+         oss << setprecision(6) << usage;
+         cout << TF::BOLD(TF::GREEN("Usage       : " + oss.str() + "%")) << endl;
+         cout << "────────────────────────────────────" << endl;
+         
+     } 
 }
