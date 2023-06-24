@@ -380,7 +380,7 @@ bool QCir::removeGate(size_t id) {
 }
 
 /**
- * @brief Analysis the quantum circuit and estimate the Clifford and T count
+ * @brief Estimate the Clifford and T count
  *
  * @param detail if true, print the detail information
  */
