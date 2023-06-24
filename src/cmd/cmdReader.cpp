@@ -298,17 +298,21 @@ bool CmdParser::addHistory() {
             // Usage: ./qsyn -f <dofile.dof> <ARG1> <ARG2>
 
             // You probably need the member _dofileName and _variables
-
-            cout << "Usage: ./qsyn -f ";
-            cout << _dofileName << " ";
+            cerr << endl;
+            cerr << "Usage: ./qsyn -f ";
+            cerr << _dofileName << " ";
             _readBuf.erase(0, 8);
             stringstream ss(_readBuf);
             string token;
-            while (ss >> token) {
-                cout << "<" << token << ">" << " ";
-            }
-            cout << endl;
+            
+            // read n 
+            ss >> token;
 
+            //read arguments
+            while (ss >> token) {
+                cerr << "<" << token << ">" << " ";
+            }
+            cerr << endl;
 
             // END TODO - t4-parametrized_dofiles
             exit(1);
@@ -332,12 +336,15 @@ bool CmdParser::addHistory() {
     return newCmd;
 }
 
-bool CmdParser::checkVariablesMatchDescription(std::string const& str) const {
+bool CmdParser::checkVariablesMatchDescription(std::string const& str) {
     // TODO - t4-parametrized_dofiles
     // parse the string
     // "//!ARGS n <ARG1> <ARG2> ... <ARGn>"
     // and check if for all k = 1 to n,
     // _variables[to_string(k)] is mapped to a valid value
+
+    // To enable keyword arguments, also map the names <ARGk>
+    // to _variables[to_string(k)]
     
     vector<string> tokens;
     stringstream ss(str);
@@ -345,7 +352,7 @@ bool CmdParser::checkVariablesMatchDescription(std::string const& str) const {
     while (ss >> token)
         tokens.push_back(token);
 
-    if (tokens.size() < 3 || tokens[0] != "//!ARGS")
+    if (tokens.size() < 2 || tokens[0] != "//!ARGS")
         return false;
 
     int n = stoi(tokens[1]);
@@ -358,11 +365,9 @@ bool CmdParser::checkVariablesMatchDescription(std::string const& str) const {
     for (int i = 0; i < n; ++i) {
         if (_variables.find(to_string(i + 1)) == _variables.end())
             return false;
-        _variables[token[i + 2]] = _variables[to_string(i + 1)];
+        // map <ARGk> to _variables[to_string(k)]
+        _variables.emplace(tokens[i + 2], _variables[to_string(i + 1)]);
     }
-
-    // To enable keyword arguments, also map the names <ARGk>
-    // to _variables[to_string(k)]
 
     return true;  // if all variables pass the check, else false
     // END TODO - t4-parametrized_dofiles

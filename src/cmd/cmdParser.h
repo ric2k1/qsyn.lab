@@ -160,8 +160,8 @@ private:
     bool addHistory();
     void retrieveHistory();
 
-    std::string replaceVariableKeysWithValues(std::string const& str) const;
-    bool checkVariablesMatchDescription(std::string const& str) const;
+    std::string replaceVariableKeysWithValues(std::string const& str);
+    bool checkVariablesMatchDescription(std::string const& str);
 
     inline bool isSpecialChar(char ch) const { return _specialChars.find_first_of(ch) != std::string::npos; }
     std::pair<CmdMap::const_iterator, CmdMap::const_iterator> getCmdMatches(std::string const& str);

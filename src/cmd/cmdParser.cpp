@@ -213,7 +213,7 @@ CmdParser::parseCmd() {
     return {e, option};
 }
 
-string CmdParser::replaceVariableKeysWithValues(string const& str) const {
+string CmdParser::replaceVariableKeysWithValues(string const& str) {
     // TODO - t4-parametrized_dofiles
     // if `str` contains the some dollar sign '$',
     // try to convert it into variable
@@ -241,8 +241,47 @@ string CmdParser::replaceVariableKeysWithValues(string const& str) const {
     // optional: if inside ${NAME} is an illegal name string,
     // warn the user.
 
+    string ret = str;
+
+    for (size_t i = 0; i < ret.length(); i++) {
+        if (ret[i] == '$' && (i == 0 || ret[i - 1] != '\\')) {
+            size_t j = i + 1;
+
+            if (ret[j] == '{') {
+                // variable with curly bracket
+                j++;
+                while (j < ret.length() && ret[j] != '}') {
+                    j++;
+                }
+                if (j == ret.length()) {
+                    // no closing curly bracket
+                    return ret;
+                }
+                j++;
+            } else {
+                // variable without curly bracket
+                while (j < ret.length() && (isalnum(ret[j]) || ret[j] == '_')) {
+                    j++;
+                }
+            }
+            
+            string var = ret.substr(i + 1, j - i - 1);
+
+            if (var[0] == '{' && var[var.length() - 1] == '}') {
+                var = var.substr(1, var.length() - 2);
+            }
+
+            if (_variables.find(var) != _variables.end()) {
+                ret.replace(i, j - i, _variables[var]);
+            } else {
+                ret.replace(i, j - i, "");
+            }
+            i = i + _variables[var].length() - 1;
+        }
+    }
+
     // return a string with all variables substituted with their value.
-    return str;
+    return ret;
     // END TODO - t4-parametrized_dofiles
 }
 
