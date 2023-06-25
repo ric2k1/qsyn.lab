@@ -11,6 +11,8 @@
 #include <cstddef>   // for size_t, NULL
 #include <iostream>  // for ostream
 #include <string>    // for string
+#include <limits> 
+
 
 #include "apCmd.h"
 #include "cmdMacros.h"  // for CMD_N_OPTS_AT_MOST_OR_RETURN
@@ -44,6 +46,7 @@ unique_ptr<ArgParseCmdType> QCirDeleteQubitCmd();
 unique_ptr<ArgParseCmdType> QCir2ZXCmd();
 unique_ptr<ArgParseCmdType> QCir2TSCmd();
 unique_ptr<ArgParseCmdType> QCirWriteCmd();
+unique_ptr<ArgParseCmdType> QCirAnalyzeCmd();
 
 bool initQCirCmd() {
     qcirMgr = new QCirMgr;
@@ -65,7 +68,8 @@ bool initQCirCmd() {
           cmdMgr->regCmd("QCGPrint", 4, QCirGatePrintCmd()) &&
           cmdMgr->regCmd("QC2ZX", 5, QCir2ZXCmd()) &&
           cmdMgr->regCmd("QC2TS", 5, QCir2TSCmd()) &&
-          cmdMgr->regCmd("QCCWrite", 4, QCirWriteCmd()))) {
+          cmdMgr->regCmd("QCCWrite", 4, QCirWriteCmd())&&
+          cmdMgr->regCmd("QCCANalyze", 5, QCirAnalyzeCmd()))) {
         cerr << "Registering \"qcir\" commands fails... exiting" << endl;
         return false;
     }
@@ -494,9 +498,41 @@ unique_ptr<ArgParseCmdType> QCirGatePrintCmd() {
     return cmd;
 }
 
+unique_ptr<ArgParseCmdType> QCirAnalyzeCmd(){
+    auto cmd = make_unique<ArgParseCmdType>("QCCANalyze");
+    cmd->parserDefinition = [](ArgumentParser &parser) {
+        parser.help("print info and usage rate of each qubit ");
+
+
+        parser.addArgument<size_t>("-start")
+            .defaultValue(0)
+            .help("start time");
+        parser.addArgument<size_t>("-end")
+            .defaultValue(std::numeric_limits<size_t>::max())
+            .help("end time");
+    };
+
+    cmd->onParseSuccess = [](ArgumentParser const &parser) {
+        QC_CMD_MGR_NOT_EMPTY_OR_RETURN("QCCANalyze");
+        size_t start = 0;
+        size_t end = numeric_limits<size_t>::max(); 
+        if (parser["-start"].isParsed()) start = parser["-start"];
+        if (parser["-end"].isParsed()) end = parser["-end"];
+        if (start > end)
+            cout << "Error: starting time is greater than ending time!!" << endl;
+        else
+            qcirMgr->getQCircuit()->analyze(start, end);
+        return CMD_EXEC_DONE;
+    };
+
+    return cmd;
+}
+
 //----------------------------------------------------------------------
 //    QCCPrint [-Summary | -Analysis | -Detail | -List | -Qubit]
 //----------------------------------------------------------------------
+
+
 
 unique_ptr<ArgParseCmdType> QCirPrintCmd() {
     auto cmd = make_unique<ArgParseCmdType>("QCCPrint");
