@@ -12,26 +12,13 @@
 #include "qcir.h"      // for QCir
 #include "qcirGate.h"  // for QCirGate
 #include "zxGraph.h"
+#include "textFormat.h"  // for TextFormat
+
+
+namespace TF = TextFormat;
 
 using namespace std;
 extern size_t verbose;
-
-/**
- * @brief
- *
- * @param start
- * @param end
- */
-void QCir::analyze(size_t start, size_t end) {
-    updateGateTime();
-    // TODO: Start writing your code!
-
-    // Hint: Useful cmd: QCSET, setting the delay of gates.
-    //       Useful functions:
-    //          gate->getDelay(): getting the delay of the QCirGate.
-    //          gate->getTime(): getting the "ending" time of the QCirGate, i.e. starting time = gate->getTime()-gate->getDelay().
-    //       You can get first gate of the qubit by class QCirQubit. Please refer to class QCirQubit and QCirGate for more information.
-}
 
 /**
  * @brief Copy a circuit
@@ -222,3 +209,245 @@ void QCir::reset() {
     _globalDFScounter = 1;
     _tensor = nullptr;
 }
+
+
+void QCir::analyze(size_t start, size_t end) {
+
+    size_t total_depth = 0;
+    for (size_t i = 0; i < _qgates.size(); i++) {
+        if (_qgates[i]->getTime() > total_depth) total_depth = _qgates[i]->getTime();
+    }
+    total_depth = (total_depth > end) ? end : total_depth;
+    cout << TF::BOLD(TF::BLUE("detecting from time : " + to_string(start) + " to " + to_string(total_depth) )) << endl;
+
+    updateGateTime();
+    size_t total = 0;
+    size_t clifford = 0;
+    size_t tfamily = 0;
+    size_t cxcnt = 0;
+    size_t nct = 0;
+    size_t h = 0;
+    size_t rz = 0;
+    size_t z = 0;
+    size_t s = 0;
+    size_t sdg = 0;
+    size_t t = 0;
+    size_t tdg = 0;
+    size_t rx = 0;
+    size_t x = 0;
+    size_t sx = 0;
+    size_t ry = 0;
+    size_t y = 0;
+    size_t sy = 0;
+
+    size_t mcp = 0;
+    size_t cz = 0;
+    // size_t ccz = 0;
+    // size_t crz = 0;
+    size_t mcrx = 0;
+    size_t cx = 0;
+    size_t ccx = 0;
+    size_t mcry = 0;
+
+    auto analysisMCR = [&clifford, &tfamily, &nct, &cxcnt](QCirGate *g) -> void {
+        if (g->getQubits().size() == 2) {
+            if (g->getPhase().denominator() == 1) {
+                clifford++;
+                if (g->getType() != GateType::MCPX || g->getType() != GateType::MCRX) clifford += 2;
+                cxcnt++;
+            } else if (g->getPhase().denominator() == 2) {
+                clifford += 2;
+                cxcnt += 2;
+                tfamily += 3;
+            } else
+                nct++;
+        } else if (g->getQubits().size() == 1) {
+            if (g->getPhase().denominator() <= 2)
+                clifford++;
+            else if (g->getPhase().denominator() == 4)
+                tfamily++;
+            else
+                nct++;
+        } else
+            nct++;
+    };
+    for (auto qb : _qubits) {
+        for (auto &g : _qgates) {
+            bool ok = false;
+            if((g->getTime()-g->getDelay()) >=start && (g->getTime()) <= end){
+                for (const auto& b : g->getQubits()) {
+                    if(b._qubit == qb->getId()) { ok = true;}
+                }
+                if(ok){
+                    total++ ;
+                    GateType type = g->getType();
+                    switch (type) {
+                        case GateType::H:
+                            h++;
+                            clifford++;
+                            break;
+                        case GateType::P:
+                            rz++;
+                            if (g->getPhase().denominator() <= 2)
+                                clifford++;
+                            else if (g->getPhase().denominator() == 4)
+                                tfamily++;
+                            else
+                                nct++;
+                            break;
+                        case GateType::RZ:
+                            rz++;
+                            if (g->getPhase().denominator() <= 2)
+                                clifford++;
+                            else if (g->getPhase().denominator() == 4)
+                                tfamily++;
+                            else
+                                nct++;
+                            break;
+                        case GateType::Z:
+                            z++;
+                            clifford++;
+                            break;
+                        case GateType::S:
+                            s++;
+                            clifford++;
+                            break;
+                        case GateType::SDG:
+                            sdg++;
+                            clifford++;
+                            break;
+                        case GateType::T:
+                            t++;
+                            tfamily++;
+                            break;
+                        case GateType::TDG:
+                            tdg++;
+                            tfamily++;
+                            break;
+                        case GateType::RX:
+                            rx++;
+                            if (g->getPhase().denominator() <= 2)
+                                clifford++;
+                            else if (g->getPhase().denominator() == 4)
+                                tfamily++;
+                            else
+                                nct++;
+                            break;
+                        case GateType::X:
+                            x++;
+                            clifford++;
+                            break;
+                        case GateType::SX:
+                            sx++;
+                            clifford++;
+                            break;
+                        case GateType::RY:
+                            ry++;
+                            if (g->getPhase().denominator() <= 2)
+                                clifford++;
+                            else if (g->getPhase().denominator() == 4)
+                                tfamily++;
+                            else
+                                nct++;
+                            break;
+                        case GateType::Y:
+                            y++;
+                            clifford++;
+                            break;
+                        case GateType::SY:
+                            sy++;
+                            clifford++;
+                            break;
+                        case GateType::MCP:
+                            mcp++;
+                            analysisMCR(g);
+                            break;
+                        case GateType::CZ:
+                            cz++;           // --C--
+                            clifford += 3;  // H-X-H
+                            cxcnt++;
+                            break;
+                        case GateType::CCZ:
+                            cz++;
+                            tfamily += 7;
+                            clifford += 10;
+                            cxcnt += 6;
+                            break;
+                        case GateType::MCRX:
+                            mcrx++;
+                            analysisMCR(g);
+                            break;
+                        case GateType::CX:
+                            cx++;
+                            clifford++;
+                            cxcnt++;
+                            break;
+                        case GateType::CCX:
+                            ccx++;
+                            tfamily += 7;
+                            clifford += 8;
+                            cxcnt += 6;
+                            break;
+                        case GateType::MCRY:
+                            mcry++;
+                            analysisMCR(g);
+                            break;
+                        default:
+                            cerr << "Error: the gate type is ERRORTYPE" << endl;
+                            break;
+                    }
+                }
+            }
+        }
+
+        size_t depth = 0;
+        size_t current_max_depth = 0;
+        for (size_t i = 0; i < _qgates.size(); i++) {
+            if (_qgates[i]->getTime() > current_max_depth && (_qgates[i]->getTime()-_qgates[i]->getDelay()) >=start && (_qgates[i]->getTime()) <= end) {
+                current_max_depth = _qgates[i]->getTime();
+                depth ++;
+            }
+        }
+        cout << TF::BOLD(TF::MAGENTA("Qubit " + to_string(qb->getId()) + " : ")) << endl;
+        cout << TF::BOLD(TF::MAGENTA("Total       : " + to_string(total))) << endl;
+        cout << TF::BOLD(TF::GREEN("Clifford    : " + to_string(clifford))) << endl;
+        cout << "└── " << TF::BOLD(TF::RED("2-qubit : " + to_string(cxcnt))) << endl;
+        cout << TF::BOLD(TF::RED("T-family    : " + to_string(tfamily))) << endl;
+        if (nct > 0)
+            cout << TF::BOLD(TF::RED("Others      : " + to_string(nct))) << endl;
+        else
+            cout << TF::BOLD(TF::GREEN("Others      : " + to_string(nct))) << endl;
+        float usage = float(total) * 100 /float(depth);
+         ostringstream oss;
+         oss << setprecision(6) << usage;
+         cout << TF::BOLD(TF::GREEN("Usage rate  : " + oss.str() + "%")) << endl;
+         cout << "────────────────────────────────────" << endl;
+        total = 0;
+        clifford = 0;
+        tfamily = 0;
+        cxcnt = 0;
+        nct = 0;
+        h = 0;
+        rz = 0;
+        z = 0;
+        s = 0;
+        sdg = 0;
+        t = 0;
+        tdg = 0;
+        rx = 0;
+        x = 0;
+        sx = 0;
+        ry = 0;
+        y = 0;
+        sy = 0;
+        mcp = 0;
+        cz = 0;
+        // ccz = 0;
+        // crz = 0;
+        mcrx = 0;
+        cx = 0;
+        ccx = 0;
+        mcry = 0;
+    }
+}
+

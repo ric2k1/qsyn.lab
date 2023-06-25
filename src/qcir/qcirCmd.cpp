@@ -11,6 +11,8 @@
 #include <cstddef>   // for size_t, NULL
 #include <iostream>  // for ostream
 #include <string>    // for string
+#include <limits> 
+
 
 #include "apCmd.h"
 #include "cmdMacros.h"  // for CMD_N_OPTS_AT_MOST_OR_RETURN
@@ -37,7 +39,6 @@ unique_ptr<ArgParseCmdType> QCPrintCmd();
 unique_ptr<ArgParseCmdType> QCSetCmd();
 unique_ptr<ArgParseCmdType> QCirReadCmd();
 unique_ptr<ArgParseCmdType> QCirPrintCmd();
-unique_ptr<ArgParseCmdType> QCirAnalyzeCmd();
 unique_ptr<ArgParseCmdType> QCirGatePrintCmd();
 unique_ptr<ArgParseCmdType> QCirAddQubitCmd();
 unique_ptr<ArgParseCmdType> QCirDeleteGateCmd();
@@ -45,6 +46,7 @@ unique_ptr<ArgParseCmdType> QCirDeleteQubitCmd();
 unique_ptr<ArgParseCmdType> QCir2ZXCmd();
 unique_ptr<ArgParseCmdType> QCir2TSCmd();
 unique_ptr<ArgParseCmdType> QCirWriteCmd();
+unique_ptr<ArgParseCmdType> QCirAnalyzeCmd();
 
 bool initQCirCmd() {
     qcirMgr = new QCirMgr;
@@ -59,7 +61,6 @@ bool initQCirCmd() {
           cmdMgr->regCmd("QCSet", 3, QCSetCmd()) &&
           cmdMgr->regCmd("QCCRead", 4, QCirReadCmd()) &&
           cmdMgr->regCmd("QCCPrint", 4, QCirPrintCmd()) &&
-          cmdMgr->regCmd("QCCANalyze", 5, QCirAnalyzeCmd()) &&
           cmdMgr->regCmd("QCGAdd", 4, make_unique<QCirAddGateCmd>()) &&
           cmdMgr->regCmd("QCBAdd", 4, QCirAddQubitCmd()) &&
           cmdMgr->regCmd("QCGDelete", 4, QCirDeleteGateCmd()) &&
@@ -67,7 +68,8 @@ bool initQCirCmd() {
           cmdMgr->regCmd("QCGPrint", 4, QCirGatePrintCmd()) &&
           cmdMgr->regCmd("QC2ZX", 5, QCir2ZXCmd()) &&
           cmdMgr->regCmd("QC2TS", 5, QCir2TSCmd()) &&
-          cmdMgr->regCmd("QCCWrite", 4, QCirWriteCmd()))) {
+          cmdMgr->regCmd("QCCWrite", 4, QCirWriteCmd())&&
+          cmdMgr->regCmd("QCCANalyze", 5, QCirAnalyzeCmd()))) {
         cerr << "Registering \"qcir\" commands fails... exiting" << endl;
         return false;
     }
@@ -496,9 +498,41 @@ unique_ptr<ArgParseCmdType> QCirGatePrintCmd() {
     return cmd;
 }
 
+unique_ptr<ArgParseCmdType> QCirAnalyzeCmd(){
+    auto cmd = make_unique<ArgParseCmdType>("QCCANalyze");
+    cmd->parserDefinition = [](ArgumentParser &parser) {
+        parser.help("print info and usage rate of each qubit ");
+
+
+        parser.addArgument<size_t>("-start")
+            .defaultValue(0)
+            .help("start time");
+        parser.addArgument<size_t>("-end")
+            .defaultValue(std::numeric_limits<size_t>::max())
+            .help("end time");
+    };
+
+    cmd->onParseSuccess = [](ArgumentParser const &parser) {
+        QC_CMD_MGR_NOT_EMPTY_OR_RETURN("QCCANalyze");
+        size_t start = 0;
+        size_t end = numeric_limits<size_t>::max(); 
+        if (parser["-start"].isParsed()) start = parser["-start"];
+        if (parser["-end"].isParsed()) end = parser["-end"];
+        if (start > end)
+            cout << "Error: starting time is greater than ending time!!" << endl;
+        else
+            qcirMgr->getQCircuit()->analyze(start, end);
+        return CMD_EXEC_DONE;
+    };
+
+    return cmd;
+}
+
 //----------------------------------------------------------------------
 //    QCCPrint [-Summary | -Analysis | -Detail | -List | -Qubit]
 //----------------------------------------------------------------------
+
+
 
 unique_ptr<ArgParseCmdType> QCirPrintCmd() {
     auto cmd = make_unique<ArgParseCmdType>("QCCPrint");
@@ -538,36 +572,6 @@ unique_ptr<ArgParseCmdType> QCirPrintCmd() {
         else
             qcirMgr->getQCircuit()->printSummary();
 
-        return CMD_EXEC_DONE;
-    };
-
-    return cmd;
-}
-
-unique_ptr<ArgParseCmdType> QCirAnalyzeCmd() {
-    auto cmd = make_unique<ArgParseCmdType>("QCCANalyze");
-
-    cmd->parserDefinition = [](ArgumentParser &parser) {
-        parser.help("analyze QCir");
-
-        parser.addArgument<size_t>("-start")
-            .help("starting time to analyze");
-        parser.addArgument<size_t>("-end")
-            .help("ending time to analyze");
-    };
-
-    cmd->onParseSuccess = [](ArgumentParser const &parser) {
-        QC_CMD_MGR_NOT_EMPTY_OR_RETURN("QCCANalyze");
-        size_t start = 0;
-        size_t end = ERROR_CODE;
-
-        if (parser["-start"].isParsed()) start = parser["-start"];
-        if (parser["-end"].isParsed()) end = parser["-end"];
-
-        if (start > end)
-            cout << "Error: starting time is greater than ending time!!" << endl;
-        else
-            qcirMgr->getQCircuit()->analyze(start, end);
         return CMD_EXEC_DONE;
     };
 
