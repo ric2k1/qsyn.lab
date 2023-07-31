@@ -59,6 +59,7 @@ public:
     int interiorCliffordSimp();
     int cliffordSimp();
     void fullReduce();
+    void partitionReduce(int d);
     void symbolicReduce();
 
     // print function
