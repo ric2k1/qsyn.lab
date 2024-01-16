@@ -302,6 +302,176 @@ void ZXGraph::addInputs(const ZXVertexList& inputs) {
     _inputs.insert(inputs.begin(), inputs.end());
 }
 
+void ZXGraph::normalize() {
+    // TODO: Start writing your code!
+
+    // get row
+    int min_row = 0, max_row = 0, vertex_idx = 0, col = 0, max_in_idx = 0;
+    for(const auto& v : _vertices){
+        int row = v->getQubit();
+        v->setId(vertex_idx);
+        if(row >= 0 && max_in_idx < vertex_idx){
+            max_in_idx = vertex_idx;
+        }
+        vertex_idx += 1;
+        if(min_row > row){
+            min_row = row;
+        }
+        else if(max_row < row){
+            max_row = row;
+        }
+        int tmp_col = v->getCol();
+        if(tmp_col > col){
+            col = tmp_col;
+        }
+    }
+
+    
+    // create comparing map
+    int row = max_row - min_row + 1;
+    vector<vector<bool> > positions;
+    vector<int> count_v_in_row(row, 0);
+    for(int i=0; i < (col + 1); i++){
+        vector<bool> each_row(row, false);
+        positions.push_back(each_row);
+    }
+
+    //
+    vector<bool> vertices_in_posQ(col+1, false);
+    vector<bool> vertices_n_posQ(col+1, false);
+    for(const auto& v : _vertices){
+        int present_col = v->getCol(), present_row = (v->getQubit() - min_row);
+        if(v->getQubit() < 0 && vertices_in_posQ[present_col]){
+            int new_col = present_col + 1;
+            while(positions[new_col][present_row] || vertices_in_posQ[new_col]){
+                new_col += 1;
+                if(new_col > col){
+                    vector<bool> each_row(row, false);
+                    positions.push_back(each_row);
+                    vertices_in_posQ.push_back(false);
+                    vertices_n_posQ.push_back(false);
+                    col += 1;
+                }
+            }
+            v->setCol(new_col);
+            positions[new_col][present_row] = true;
+            vertices_n_posQ[new_col] = true;
+        }
+        else if(positions[present_col][present_row]){
+            int new_col = present_col + 1;
+            bool isOut = false;
+            if(v->getQubit() < 0){
+                isOut = true;
+            }
+            while(positions[new_col][present_row] || (isOut && vertices_in_posQ[new_col])){
+                new_col += 1;
+                if(new_col > col){
+                    vector<bool> each_row(row, false);
+                    positions.push_back(each_row);
+                    vertices_in_posQ.push_back(false);
+                    vertices_n_posQ.push_back(false);
+                    col += 1;
+                }
+            }
+            v->setCol(new_col);
+            positions[new_col][present_row] = true;
+            if(v->getQubit() >= 0){
+                vertices_in_posQ[new_col] = true;
+            }
+            else{
+                vertices_n_posQ[new_col] = true;
+            }
+        }
+        else{
+            positions[present_col][present_row] = true;
+            if(v->getQubit() >= 0){
+                vertices_in_posQ[present_col] = true;
+            }
+            else{
+                vertices_n_posQ[present_col] = true;
+            }
+        }
+
+    }
+    vector<int> final_col(col, 0);
+    // minimize graph
+    int fulled_idx = 1, run_idx = 1;
+    while(run_idx < col){
+        vector<bool> tmp_row(row, false);
+        bool isOut = false;
+        for(int i=0; i<row; i++){
+            tmp_row[i] = positions[run_idx][i];
+            if(positions[run_idx][i] && i < (-1)*min_row){
+                isOut = true;
+            }
+        }
+        int present_idx = run_idx, end_idx = run_idx + 1;
+        bool collision = false;
+
+        while(end_idx < col && !collision){
+            for(int i=0; i<row; i++){
+                if(!positions[end_idx][i]){
+                    continue;
+                }
+                else if((isOut && vertices_in_posQ[end_idx]) || (!isOut && vertices_n_posQ[end_idx])){
+                    collision = true;
+                    break;
+                }
+                else{
+                    if(tmp_row[i]){
+                        collision = true;
+                        break;
+                    }
+                    else{
+                        tmp_row[i] = true;
+                    }
+                }
+            }
+            if(!collision){
+                end_idx += 1;
+            }
+        }
+        for(int i=present_idx; i<end_idx; i++){
+            final_col[i] = fulled_idx;
+        }
+        fulled_idx += 1;
+        run_idx = end_idx;
+    }
+
+    final_col[run_idx] = fulled_idx;
+
+    vector<int> count_col(fulled_idx+1, 0);
+
+    for (auto& v : _vertices){
+        int pre_col = v->getCol();
+        v->setCol(final_col[pre_col]);
+        count_col[final_col[pre_col]] += 1;
+    }
+
+    for(auto& v : _outputs){
+        v->setCol(fulled_idx+0.5);
+    }
+    vector<bool> if_shift(fulled_idx+1, false);
+    for(int i=1; i<fulled_idx; i++){
+        if(count_col[i] > 2){
+            if_shift[i] = true;
+        }
+    }
+    int which_idx = 0;
+    for(auto& v : _vertices){
+        if(which_idx > max_in_idx){
+            break;
+        }
+        which_idx += 1;
+        if(if_shift[v->getCol()]){
+            if((v->getQubit())%2){
+                v->setCol(float(v->getCol())+0.5);
+            }
+        }
+    }
+
+}
+
 /**
  * @brief Add a set of outputs
  *
